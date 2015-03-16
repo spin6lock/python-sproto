@@ -12,8 +12,10 @@ result = sproto_encode(st, {
     "phone":[
         {
             "type" : 1,
-            "number": 10086,
+            "number": "10086",
         },
     ],
     })
 
+print "-------------------------"
+print sproto_decode(st, result)

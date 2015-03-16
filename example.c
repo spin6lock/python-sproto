@@ -5,20 +5,8 @@ typedef int bool;
 #define true 1
 #define false 0
 
-static PyObject*
-myfunc(PyObject *self, PyObject *args) {
-    int a, b;
-    if (!PyArg_ParseTuple(args,"ii", &a, &b)) {
-        return Py_None;
-    }
-    return Py_BuildValue("i", a + b);
-}
-
 struct encode_ud {
-    struct sproto_type *st;
-    int list_index;
     PyObject *table;
-	const char *tagname;
 };
 
 static int encode(void *ud, const char *tagname, int type,\
@@ -51,6 +39,7 @@ static int encode(void *ud, const char *tagname, int type,\
             printf("PyInt Check:%s\n", PyInt_Check(data)?"true":"false");
             //TODO error handling PyInt_AsLong(data) != -1
             long i = PyInt_AsLong(data);
+            printf("int value:%lu\n", i);
             *(uint64_t *)value = (uint64_t)i;
             return 8;
         }
@@ -69,7 +58,6 @@ static int encode(void *ud, const char *tagname, int type,\
             Py_ssize_t len = 0;
             PyString_AsStringAndSize(data, &string_ptr, &len);
             memcpy(value, string_ptr, (size_t)len);
-            printf("PyString:%s\n", string_ptr);
             return len;
         }
         case SPROTO_TSTRUCT: {
@@ -106,6 +94,62 @@ py_sproto_create(PyObject *self, PyObject *args) {
     return Py_None;
 }
 
+struct decode_ud {
+    PyObject *table;
+};
+
+static int
+decode(void *ud, const char *tagname, int type, int index, struct sproto_type *st, void *value, int length) {
+    printf("tagname:%s, type:%d, index:%d, length:%d\n", tagname, type, index, length);
+	struct decode_ud * self = ud;
+    printf("table pointer: %p\n", (void*)self->table);
+    switch(type) {
+    case SPROTO_TINTEGER: {
+        printf("set integer\n");
+        PyDict_SetItemString(self->table, tagname, Py_BuildValue("I", *(uint64_t*)value));
+        printf("table size:%d\n", PyDict_Size(self->table));
+		break;
+	}
+	case SPROTO_TBOOLEAN: {
+        printf("set bool\n");
+        PyObject *bool_result = *(int*)value > 0 ? Py_True : Py_False;
+        PyDict_SetItemString(self->table, tagname, bool_result);
+        printf("table size:%d\n", PyDict_Size(self->table));
+		break;
+	}
+	case SPROTO_TSTRING: {
+        printf("set string\n");
+        PyDict_SetItemString(self->table, tagname, Py_BuildValue("s#", (char*)value, length));
+        printf("table size:%d\n", PyDict_Size(self->table));
+		break;
+	}
+	case SPROTO_TSTRUCT: {
+        printf("pack struct\n");
+		struct decode_ud sub;
+		int r;
+        sub.table = PyDict_New();
+        PyObject *data = PyDict_GetItemString(self->table, tagname);
+        if (index > 0) {
+            if (data == NULL) {
+                PyObject *list = PyList_New(0);
+                PyList_Append(list, sub.table);
+                PyDict_SetItemString(self->table, tagname, list); //TODO check set item succ
+            } else {
+                PyList_Append(data, sub.table);
+            }
+        }
+		r = sproto_decode(st, value, length, decode, &sub);
+        printf("int r:%d\n", r);
+		if (r < 0 || r != length) {
+            printf("after decode:%d\n", r);
+			return r;
+        }
+		break;
+	}
+    }
+    return 0;
+}
+
 static PyObject*
 py_sproto_type(PyObject *self, PyObject *args) {
     PyObject *sp_ptr;
@@ -134,8 +178,6 @@ py_sproto_encode(PyObject *pymodule, PyObject *args) {
     int sz = 4096;
     void *buffer = PyMem_Malloc(sz);
     struct encode_ud self;
-    self.list_index = -1;
-    self.st = sprototype;
     self.table = table;
     for (;;) {
         int r = sproto_encode(sprototype, buffer, sz, encode, &self);
@@ -148,11 +190,37 @@ py_sproto_encode(PyObject *pymodule, PyObject *args) {
     }
 }
 
+static PyObject*
+py_sproto_decode(PyObject *pymodule, PyObject *args) {
+    PyObject *st_capsule;
+    char *buffer;
+    int sz = 0;
+    char *sprototype;
+    struct decode_ud self;
+    self.table = PyDict_New();
+    if (!PyArg_ParseTuple(args, "Os#", &st_capsule, &buffer, &sz)) {
+        printf("decode para error");
+        return Py_None;
+    }
+    printf("msg len:%d\n", sz);
+    sprototype = PyCapsule_GetPointer(st_capsule, NULL);
+    printf("original table size:%d\n", PyDict_Size(self.table));
+    printf("original table addr:%p\n", (void*)self.table);
+    int r = sproto_decode(sprototype, buffer, sz, decode, &self);
+    if (r < 0) {
+        printf("sproto c lib error\n");
+        return Py_None;
+    }
+    //printf("table size:%d\n", PyDict_Size(self.table));
+    //PyDict_SetItemString(self.table, "phone", Py_BuildValue("I", 10086));
+    return Py_BuildValue("O", self.table);
+}
+
 static PyMethodDef my_methods[] = {
-    {"myadd", myfunc, METH_VARARGS},
     {"sproto_create", py_sproto_create, METH_VARARGS},
     {"sproto_type", py_sproto_type, METH_VARARGS},
     {"sproto_encode", py_sproto_encode, METH_VARARGS},
+    {"sproto_decode", py_sproto_decode, METH_VARARGS},
     {NULL, NULL}
 };
 
