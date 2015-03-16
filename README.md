@@ -7,12 +7,15 @@ Then you can use sproto decode and encode interface.
     create a sproto object from binary
 
 * sproto_type:
+
     query the entity for pack
 
 * sproto_encode:
+
     encode data in dict with entity description
 
 * sproto_decode:
+
     decode data in message with entity description
 
 Compile:
