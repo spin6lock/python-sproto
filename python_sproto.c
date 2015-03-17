@@ -65,6 +65,8 @@ static int encode(void *ud, const char *tagname, int type,\
             sub.table = data;
             return sproto_encode(st, value, length, encode, &sub);
         }
+        default:
+            return 0;
     }
 }
 
@@ -74,7 +76,6 @@ sproto_free(PyObject *ptr) {
     if (sp != NULL) {
         sproto_release(sp);
     }
-    return 0;
 }
 
 static PyObject*
@@ -164,12 +165,13 @@ py_sproto_type(PyObject *self, PyObject *args) {
         //printf("succ query proto type\n");
         return PyCapsule_New(st, NULL, NULL);
     }
+    return Py_None;
 }
 
 static PyObject*
 py_sproto_encode(PyObject *pymodule, PyObject *args) {
     PyObject *st_capsule;
-    char *sprototype;
+    struct sproto_type *sprototype;
     PyObject *table;
     if (!PyArg_ParseTuple(args, "OO", &st_capsule, &table)) {
         return Py_None;
@@ -195,7 +197,7 @@ py_sproto_decode(PyObject *pymodule, PyObject *args) {
     PyObject *st_capsule;
     char *buffer;
     int sz = 0;
-    char *sprototype;
+    struct sproto_type *sprototype;
     struct decode_ud self;
     self.table = PyDict_New();
     if (!PyArg_ParseTuple(args, "Os#", &st_capsule, &buffer, &sz)) {
