@@ -1,5 +1,4 @@
-from example import *
-#print myadd(1,2)
+from pysproto import sproto_create, sproto_type, sproto_encode, sproto_decode
 
 with open("person.pb", "r") as fh:
     content = fh.read()
@@ -17,5 +16,7 @@ result = sproto_encode(st, {
     ],
     })
 
+print "result length:", len(result)
+print ''.join(["%02x" %ord(x) for x in result])
 print "-------------------------"
 print sproto_decode(st, result)

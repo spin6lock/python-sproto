@@ -1,9 +1,9 @@
 from distutils.core import setup, Extension
 
-mymodule = Extension('example',
-        sources = ["example.c", "sproto.c"])
+pysproto_module = Extension('pysproto',
+        sources = ["python_sproto.c", "sproto.c"])
 
-setup (name = "example",
-        version = '1.0',
-        description = "add example",
-        ext_modules = [mymodule])
+setup (name = "python_sproto",
+        version = '0.1',
+        description = "python binding to sproto, a serialize library",
+        ext_modules = [pysproto_module])
