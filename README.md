@@ -21,4 +21,5 @@ Then you can use sproto decode and encode interface.
 Compile:
 
     python setup.py build
-    Then copy the example.so from build directory topython script directory.
+
+    Then copy the example.so from build directory to python script directory.
