@@ -187,7 +187,9 @@ py_sproto_encode(PyObject *pymodule, PyObject *args) {
             buffer = PyMem_Realloc(buffer, sz * 2);
             sz = sz * 2;
         } else {
-            return Py_BuildValue("s#", buffer, r);
+            PyObject *t = Py_BuildValue("s#", buffer, r);
+            PyMem_Free(buffer);
+            return t;
         }
     }
 }
@@ -218,11 +220,58 @@ py_sproto_decode(PyObject *pymodule, PyObject *args) {
     return Py_BuildValue("O", self.table);
 }
 
+static PyObject*
+py_sproto_pack(PyObject *pymodule, PyObject *args) {
+    char *srcbuffer;
+    int srcsz;
+    if (!PyArg_ParseTuple(args, "s#", &srcbuffer, &srcsz)) {
+        return Py_None;
+    }
+    int maxsz = (srcsz + 2047) / 2048 * 2 + srcsz;
+    void *dstbuffer = PyMem_Malloc(maxsz);
+    int bytes = sproto_pack(srcbuffer, srcsz, dstbuffer, maxsz);
+    if (bytes > maxsz) {
+        return Py_None;
+    }
+    PyObject *t = Py_BuildValue("s#", dstbuffer, bytes);
+    PyMem_Free(dstbuffer);
+    return t; 
+}
+
+static PyObject*
+py_sproto_unpack(PyObject *pymodule, PyObject *args) {
+    char *srcbuffer;
+    int srcsz;
+    if (!PyArg_ParseTuple(args, "s#", &srcbuffer, &srcsz)) {
+        return Py_None;
+    }
+    int dstsz = 1024;
+    void *dstbuffer = PyMem_Malloc(dstsz);
+    int r = sproto_unpack(srcbuffer, srcsz, dstbuffer, dstsz);
+    if (r < 0) {
+        PyMem_Free(dstbuffer);
+        return Py_None;
+    }
+    if (r > dstsz) {
+        dstbuffer = PyMem_Realloc(dstbuffer, r);
+    }
+    r = sproto_unpack(srcbuffer, srcsz, dstbuffer, dstsz);
+    if (r < 0) {
+        PyMem_Free(dstbuffer);
+        return Py_None;
+    }
+    PyObject *t = Py_BuildValue("s#", dstbuffer, r);
+    PyMem_Free(dstbuffer);
+    return t;
+}
+
 static PyMethodDef pysproto_methods[] = {
     {"sproto_create", py_sproto_create, METH_VARARGS},
     {"sproto_type", py_sproto_type, METH_VARARGS},
     {"sproto_encode", py_sproto_encode, METH_VARARGS},
     {"sproto_decode", py_sproto_decode, METH_VARARGS},
+    {"sproto_pack", py_sproto_pack, METH_VARARGS},
+    {"sproto_unpack", py_sproto_unpack, METH_VARARGS},
     {NULL, NULL}
 };
 
