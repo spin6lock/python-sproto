@@ -5,6 +5,8 @@ typedef int bool;
 #define true 1
 #define false 0
 
+static PyObject *SprotoError;
+
 struct encode_ud {
     PyObject *table;
 };
@@ -30,14 +32,14 @@ static int encode(void *ud, const char *tagname, int type,\
             return 0;
         }
         data = PyList_GetItem(data, index - 1);
-    } else {
-        //do nothing 
     }
     //self->tagname = tagname;
     switch(type) {
         case SPROTO_TINTEGER: {
-            //printf("PyInt Check:%s\n", PyInt_Check(data)?"true":"false");
-            //TODO error handling PyInt_AsLong(data) != -1
+            if (!PyInt_Check(data)) {
+                PyErr_SetObject(SprotoError, PyString_FromFormat("type mismatch, tag:%s, expected int", tagname));
+                return -1;
+            }
             long i = PyInt_AsLong(data);
             //printf("int value:%lu\n", i);
             *(uint64_t *)value = (uint64_t)i;
@@ -54,6 +56,11 @@ static int encode(void *ud, const char *tagname, int type,\
         }
         case SPROTO_TSTRING: {
             //printf("PyString Check:%s\n", PyString_Check(data)?"true":"false");
+            if (!PyString_Check(data)) {
+                PyErr_SetObject(SprotoError, PyString_FromFormat("type mismatch, tag:%s, expected string", tagname));
+                return -1;
+            }
+
             char* string_ptr = NULL;
             Py_ssize_t len = 0;
             PyString_AsStringAndSize(data, &string_ptr, &len);
@@ -84,8 +91,7 @@ py_sproto_create(PyObject *self, PyObject *args) {
     int sz = 0;
     struct sproto *sp;
     if (!PyArg_ParseTuple(args, "s#", &buffer, &sz)) {
-        //printf("create failed\n");
-        return Py_None;
+        return NULL;
     }
     sp = sproto_create(buffer, sz);
     if (sp) {
@@ -134,7 +140,7 @@ decode(void *ud, const char *tagname, int type, int index, struct sproto_type *s
             if (data == NULL) {
                 PyObject *list = PyList_New(0);
                 PyList_Append(list, sub.table);
-                PyDict_SetItemString(self->table, tagname, list); //TODO check set item succ
+                PyDict_SetItemString(self->table, tagname, list);
             } else {
                 PyList_Append(data, sub.table);
             }
@@ -156,13 +162,11 @@ py_sproto_type(PyObject *self, PyObject *args) {
     PyObject *sp_ptr;
     char *name;
     if (!PyArg_ParseTuple(args, "Os", &sp_ptr, &name)) {
-        //printf("get proto failed\n");
-        return Py_None;
+        return NULL;
     }
     struct sproto *sp = PyCapsule_GetPointer(sp_ptr,NULL);
     struct sproto_type *st = sproto_type(sp, name);
     if (st) {
-        //printf("succ query proto type\n");
         return PyCapsule_New(st, NULL, NULL);
     }
     return Py_None;
@@ -174,7 +178,7 @@ py_sproto_encode(PyObject *pymodule, PyObject *args) {
     struct sproto_type *sprototype;
     PyObject *table;
     if (!PyArg_ParseTuple(args, "OO", &st_capsule, &table)) {
-        return Py_None;
+        return NULL;
     }
     sprototype = PyCapsule_GetPointer(st_capsule, NULL);
     int sz = 4096;
@@ -184,6 +188,10 @@ py_sproto_encode(PyObject *pymodule, PyObject *args) {
     for (;;) {
         int r = sproto_encode(sprototype, buffer, sz, encode, &self);
         if (r < 0) {
+            if (PyErr_Occurred()) {
+                PyMem_Free(buffer);
+                return NULL;
+            }
             buffer = PyMem_Realloc(buffer, sz * 2);
             sz = sz * 2;
         } else {
@@ -203,20 +211,16 @@ py_sproto_decode(PyObject *pymodule, PyObject *args) {
     struct decode_ud self;
     self.table = PyDict_New();
     if (!PyArg_ParseTuple(args, "Os#", &st_capsule, &buffer, &sz)) {
-        //printf("decode para error");
-        return Py_None;
+        return NULL;
     }
     //printf("msg len:%d\n", sz);
     sprototype = PyCapsule_GetPointer(st_capsule, NULL);
-    //printf("original table size:%d\n", PyDict_Size(self.table));
-    //printf("original table addr:%p\n", (void*)self.table);
     int r = sproto_decode(sprototype, buffer, sz, decode, &self);
     if (r < 0) {
-        //printf("sproto c lib error\n");
-        return Py_None;
+        PyErr_SetString(SprotoError, "sproto c lib error");
+        return NULL;
     }
-    ////printf("table size:%d\n", PyDict_Size(self.table));
-    //PyDict_SetItemString(self.table, "phone", Py_BuildValue("I", 10086));
+    //printf("table size:%d\n", PyDict_Size(self.table));
     return Py_BuildValue("O", self.table);
 }
 
@@ -225,7 +229,7 @@ py_sproto_pack(PyObject *pymodule, PyObject *args) {
     char *srcbuffer;
     int srcsz;
     if (!PyArg_ParseTuple(args, "s#", &srcbuffer, &srcsz)) {
-        return Py_None;
+        return NULL;
     }
     int maxsz = (srcsz + 2047) / 2048 * 2 + srcsz;
     void *dstbuffer = PyMem_Malloc(maxsz);
@@ -243,7 +247,7 @@ py_sproto_unpack(PyObject *pymodule, PyObject *args) {
     char *srcbuffer;
     int srcsz;
     if (!PyArg_ParseTuple(args, "s#", &srcbuffer, &srcsz)) {
-        return Py_None;
+        return NULL;
     }
     int dstsz = 1024;
     void *dstbuffer = PyMem_Malloc(dstsz);
@@ -277,6 +281,13 @@ static PyMethodDef pysproto_methods[] = {
 
 PyMODINIT_FUNC
 initpysproto(void){
-    Py_InitModule("pysproto", pysproto_methods);
+    PyObject *m;
+    m = Py_InitModule("pysproto", pysproto_methods);
+    if (m == NULL) {
+        return;
+    }
+    SprotoError = PyErr_NewException("pysproto.error", NULL, NULL);
+    Py_INCREF(SprotoError);
+    PyModule_AddObject(m, "error", SprotoError);
 }
 

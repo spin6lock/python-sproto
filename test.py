@@ -1,11 +1,12 @@
+import pysproto
 from pysproto import sproto_create, sproto_type, sproto_encode, sproto_decode, sproto_pack, sproto_unpack
 
 with open("person.pb", "r") as fh:
     content = fh.read()
 sp = sproto_create(content)
-st = sproto_type(sp, "Person");
+st = sproto_type(sp, "Person")
 result = sproto_encode(st, {
-    "name": "John",
+    "name": "crystal",
     "id":1001,
     "email":"crystal@example.com",
     "phone":[
@@ -15,7 +16,6 @@ result = sproto_encode(st, {
         },
     ],
     })
-
 print "result length:", len(result)
 print ''.join(["%02x" %ord(x) for x in result])
 print "-------------------------"
@@ -27,3 +27,12 @@ print ''.join(["%02x" %ord(x) for x in pack_result])
 print "-------------------------"
 unpack_result = sproto_unpack(pack_result)
 print ''.join(["%02x" %ord(x) for x in unpack_result])
+
+print "========================="
+try:
+    tmp = sproto_encode(st, {
+        "name":"t",
+        "id":"fake_id",
+    })
+except pysproto.error:
+    print "catch encode error"
