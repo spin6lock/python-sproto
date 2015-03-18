@@ -269,6 +269,40 @@ py_sproto_unpack(PyObject *pymodule, PyObject *args) {
     return t;
 }
 
+static PyObject*
+py_sproto_protocol(PyObject *pymodule, PyObject *args) {
+    PyObject *sp_ptr;
+    PyObject *name_or_tagid;
+    if (!PyArg_ParseTuple(args, "OO", &sp_ptr, &name_or_tagid)) {
+        return NULL;
+    }
+    struct sproto *sp = PyCapsule_GetPointer(sp_ptr, NULL);
+    int tagid;
+    char *name;
+    PyObject *ret;
+    if (PyInt_Check(name_or_tagid)) {
+        tagid = PyInt_AsLong(name_or_tagid);
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        name = sproto_protoname(sp, tagid);
+        ret = Py_BuildValue("s", name);
+    } else {
+        name = PyString_AsString(name_or_tagid);
+        tagid = sproto_prototag(sp, name);
+        ret = Py_BuildValue("i", tagid);
+    }
+    struct sproto_type *request;
+    struct sproto_type *response;
+    PyObject *py_request;
+    PyObject *py_response;
+    request = sproto_protoquery(sp, tagid, SPROTO_REQUEST);
+    py_request = request == NULL ? Py_None:PyCapsule_New(request, NULL, NULL);
+    response = sproto_protoquery(sp, tagid, SPROTO_REQUEST);
+    py_response = response == NULL? Py_None:PyCapsule_New(response, NULL, NULL);
+    return Py_BuildValue("OOO", ret, py_request, py_response);
+}
+
 static PyMethodDef pysproto_methods[] = {
     {"sproto_create", py_sproto_create, METH_VARARGS},
     {"sproto_type", py_sproto_type, METH_VARARGS},
@@ -276,6 +310,7 @@ static PyMethodDef pysproto_methods[] = {
     {"sproto_decode", py_sproto_decode, METH_VARARGS},
     {"sproto_pack", py_sproto_pack, METH_VARARGS},
     {"sproto_unpack", py_sproto_unpack, METH_VARARGS},
+    {"sproto_protocol", py_sproto_protocol, METH_VARARGS},
     {NULL, NULL}
 };
 

@@ -1,5 +1,5 @@
 import pysproto
-from pysproto import sproto_create, sproto_type, sproto_encode, sproto_decode, sproto_pack, sproto_unpack
+from pysproto import sproto_create, sproto_type, sproto_encode, sproto_decode, sproto_pack, sproto_unpack, sproto_protocol
 
 with open("person.pb", "r") as fh:
     content = fh.read()
@@ -27,7 +27,6 @@ print ''.join(["%02x" %ord(x) for x in pack_result])
 print "-------------------------"
 unpack_result = sproto_unpack(pack_result)
 print ''.join(["%02x" %ord(x) for x in unpack_result])
-
 print "========================="
 try:
     tmp = sproto_encode(st, {
@@ -36,3 +35,9 @@ try:
     })
 except pysproto.error:
     print "catch encode error"
+print ""
+print "-------------------------"
+with open("protocol.spb", "r") as fh:
+    content = fh.read()
+sp = sproto_create(content)
+print sproto_protocol(sp, "foobar")
