@@ -278,7 +278,7 @@ py_sproto_protocol(PyObject *pymodule, PyObject *args) {
     }
     struct sproto *sp = PyCapsule_GetPointer(sp_ptr, NULL);
     int tagid;
-    char *name;
+    const char *name;
     PyObject *ret;
     if (PyInt_Check(name_or_tagid)) {
         tagid = PyInt_AsLong(name_or_tagid);
