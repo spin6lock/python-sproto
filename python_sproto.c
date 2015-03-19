@@ -41,9 +41,14 @@ static int encode(void *ud, const char *tagname, int type,\
                 return -1;
             }
             long i = PyInt_AsLong(data);
-            //printf("int value:%lu\n", i);
-            *(uint64_t *)value = (uint64_t)i;
-            return 8;
+            int vh = i >> 31;
+            if (vh == 0 || vh == -1) {
+                *(uint32_t *)value = (uint32_t)i;
+                return 4;
+            } else {
+                *(uint64_t *)value = (uint64_t)i;
+                return 8;
+            }
         }
         case SPROTO_TBOOLEAN: {
             //printf("PyBool Check:%s\n", PyBool_Check(data)?"true":"false");
@@ -107,10 +112,10 @@ struct decode_ud {
 
 static int
 decode(void *ud, const char *tagname, int type, int index, struct sproto_type *st, void *value, int length) {
-    printf("tagname:%s, type:%d, index:%d, length:%d\n", tagname, type, index, length);
+    //printf("tagname:%s, type:%d, index:%d, length:%d\n", tagname, type, index, length);
 	struct decode_ud * self = ud;
     //printf("table pointer: %p\n", (void*)self->table);
-    PyObject *obj;
+    PyObject *obj = self->table;
     if (index > 0) {
         obj = PyDict_GetItemString(self->table, tagname);
         if (obj == NULL) {
@@ -122,7 +127,7 @@ decode(void *ud, const char *tagname, int type, int index, struct sproto_type *s
     switch(type) {
     case SPROTO_TINTEGER: {
         //printf("set integer\n");
-        PyObject *data = Py_BuildValue("I", *(uint64_t*)value);
+        PyObject *data = Py_BuildValue("i", *(uint64_t*)value);
         if (PyList_Check(obj)) {
             PyList_Append(obj, data);
         } else {
