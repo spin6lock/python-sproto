@@ -14,6 +14,10 @@ result = sproto_encode(st, {
             "type" : 1,
             "number": "10086",
         },
+        {
+            "type" : 2,
+            "number":"10010",
+        },
     ],
     })
 print "result length:", len(result)
@@ -41,3 +45,14 @@ with open("protocol.spb", "r") as fh:
     content = fh.read()
 sp = sproto_create(content)
 print sproto_protocol(sp, "foobar")
+print "========================="
+with open("int_arr.spb", "r") as fh:
+    content = fh.read()
+sp = sproto_create(content)
+st = sproto_type(sp, "Phone")
+msg = sproto_encode(st, {
+        "phonenumber": [
+            1,2,3,4,5
+            ]
+    })
+print sproto_decode(st, msg)

@@ -110,23 +110,46 @@ decode(void *ud, const char *tagname, int type, int index, struct sproto_type *s
     //printf("tagname:%s, type:%d, index:%d, length:%d\n", tagname, type, index, length);
 	struct decode_ud * self = ud;
     //printf("table pointer: %p\n", (void*)self->table);
+    PyObject *obj;
+    if (index > 0) {
+        obj = PyDict_GetItemString(self->table, tagname);
+        if (obj == NULL) {
+            PyObject *list = PyList_New(0);
+            PyDict_SetItemString(self->table, tagname, list);
+            obj = list;
+        }
+    }
     switch(type) {
     case SPROTO_TINTEGER: {
         //printf("set integer\n");
-        PyDict_SetItemString(self->table, tagname, Py_BuildValue("I", *(uint64_t*)value));
+        PyObject *data = Py_BuildValue("I", *(uint64_t*)value);
+        if (PyList_Check(obj)) {
+            PyList_Append(obj, data);
+        } else {
+            PyDict_SetItemString(self->table, tagname, data);
+        }
         //printf("table size:%d\n", PyDict_Size(self->table));
 		break;
 	}
 	case SPROTO_TBOOLEAN: {
         //printf("set bool\n");
-        PyObject *bool_result = *(int*)value > 0 ? Py_True : Py_False;
-        PyDict_SetItemString(self->table, tagname, bool_result);
+        PyObject *data = *(int*)value > 0 ? Py_True : Py_False;
+        if (PyList_Check(obj)) {
+            PyList_Append(obj, data);
+        } else {
+            PyDict_SetItemString(self->table, tagname, data);
+        }
         //printf("table size:%d\n", PyDict_Size(self->table));
 		break;
 	}
 	case SPROTO_TSTRING: {
         //printf("set string\n");
-        PyDict_SetItemString(self->table, tagname, Py_BuildValue("s#", (char*)value, length));
+        PyObject *data = Py_BuildValue("s#", (char*)value, length);
+        if (PyList_Check(obj)) {
+            PyList_Append(obj, data);
+        } else {
+            PyDict_SetItemString(self->table, tagname, data);
+        }
         //printf("table size:%d\n", PyDict_Size(self->table));
 		break;
 	}
@@ -135,15 +158,10 @@ decode(void *ud, const char *tagname, int type, int index, struct sproto_type *s
 		struct decode_ud sub;
 		int r;
         sub.table = PyDict_New();
-        PyObject *data = PyDict_GetItemString(self->table, tagname);
-        if (index > 0) {
-            if (data == NULL) {
-                PyObject *list = PyList_New(0);
-                PyList_Append(list, sub.table);
-                PyDict_SetItemString(self->table, tagname, list);
-            } else {
-                PyList_Append(data, sub.table);
-            }
+        if (PyList_Check(obj)) {
+            PyList_Append(obj, sub.table);
+        } else {
+            PyDict_SetItemString(self->table, tagname, sub.table);
         }
 		r = sproto_decode(st, value, length, decode, &sub);
         //printf("int r:%d\n", r);
