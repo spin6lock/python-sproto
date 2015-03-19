@@ -107,7 +107,7 @@ struct decode_ud {
 
 static int
 decode(void *ud, const char *tagname, int type, int index, struct sproto_type *st, void *value, int length) {
-    //printf("tagname:%s, type:%d, index:%d, length:%d\n", tagname, type, index, length);
+    printf("tagname:%s, type:%d, index:%d, length:%d\n", tagname, type, index, length);
 	struct decode_ud * self = ud;
     //printf("table pointer: %p\n", (void*)self->table);
     PyObject *obj;

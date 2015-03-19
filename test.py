@@ -46,13 +46,30 @@ with open("protocol.spb", "r") as fh:
 sp = sproto_create(content)
 print sproto_protocol(sp, "foobar")
 print "========================="
-with open("int_arr.spb", "r") as fh:
+"""
+with open("testall.spb", "r") as fh:
     content = fh.read()
 sp = sproto_create(content)
-st = sproto_type(sp, "Phone")
+st = sproto_type(sp, "foobar")
 msg = sproto_encode(st, {
-        "phonenumber": [
-            1,2,3,4,5
-            ]
-    })
+    a : "hello",
+    b : 1000000,
+    c : True,
+    d : {
+           a : "world",
+           #skip b
+           c : -1,
+    },
+    e : {"ABC", "def"},
+    f : {-3, -2, -1, 0, 1, 2},
+    g : {True, False, True},
+    h : {
+         {b : 100},
+         {},
+         {b : -100, c : False},
+         {b : 0, e : {"test"}},
+        },
+    }
+    )
 print sproto_decode(st, msg)
+"""
