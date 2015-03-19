@@ -86,6 +86,7 @@ void
 sproto_free(PyObject *ptr) {
     struct sproto *sp = PyCapsule_GetPointer(ptr, NULL);
     if (sp != NULL) {
+        //printf("release sp\n");
         sproto_release(sp);
     }
 }
@@ -180,6 +181,12 @@ decode(void *ud, const char *tagname, int type, int index, struct sproto_type *s
     return 0;
 }
 
+void 
+sprototype_free(PyObject *ptr) {
+    PyObject *sp_capsule = PyCapsule_GetContext(ptr);
+    Py_XDECREF(sp_capsule);
+}
+
 static PyObject*
 py_sproto_type(PyObject *self, PyObject *args) {
     PyObject *sp_ptr;
@@ -190,7 +197,10 @@ py_sproto_type(PyObject *self, PyObject *args) {
     struct sproto *sp = PyCapsule_GetPointer(sp_ptr,NULL);
     struct sproto_type *st = sproto_type(sp, name);
     if (st) {
-        return PyCapsule_New(st, NULL, NULL);
+        PyObject *st_capsule = PyCapsule_New(st, NULL, sprototype_free);
+        PyCapsule_SetContext(st_capsule, sp_ptr);
+        Py_XINCREF(sp_ptr);
+        return st_capsule;
     }
     return Py_None;
 }
