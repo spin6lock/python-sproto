@@ -641,8 +641,8 @@ encode_string(sproto_callback cb, void *ud, struct field *f, uint8_t *data, int 
 	sz = cb(ud, f->name, SPROTO_TSTRING, 0, NULL, data+SIZEOF_LENGTH, size-SIZEOF_LENGTH);
 	if (sz <= 0) {
 		return sz;
-    }
-    sz--;
+	}
+	sz--;
 	return fill_size(data, sz);
 }
 
@@ -793,9 +793,9 @@ encode_array(sproto_callback cb, void *ud, struct field *f, uint8_t *data, int s
 				return -1;
 			if (sz == 0)  //nil object, end of array
 				break;
-            if (type == SPROTO_TSTRING) {
-                sz--;
-            }
+			if (type == SPROTO_TSTRING) {
+				sz--;
+			}
 			fill_size(buffer, sz);
 			buffer += SIZEOF_LENGTH+sz;
 			size -=sz;
