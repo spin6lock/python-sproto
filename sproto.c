@@ -600,10 +600,6 @@ findtag(struct sproto_type *st, int tag) {
 
 static inline int
 fill_size(uint8_t * data, int sz) {
-	if (sz < 0)
-		return -1;
-	if (sz == 0)
-		return 0;
 	data[0] = sz & 0xff;
 	data[1] = (sz >> 8) & 0xff;
 	data[2] = (sz >> 16) & 0xff;
@@ -643,6 +639,10 @@ encode_string(sproto_callback cb, void *ud, struct field *f, uint8_t *data, int 
 	if (size < SIZEOF_LENGTH)
 		return -1;
 	sz = cb(ud, f->name, SPROTO_TSTRING, 0, NULL, data+SIZEOF_LENGTH, size-SIZEOF_LENGTH);
+	if (sz <= 0) {
+		return sz;
+    }
+    sz--;
 	return fill_size(data, sz);
 }
 
@@ -691,7 +691,7 @@ encode_integer_array(sproto_callback cb, void *ud, struct field *f, uint8_t *buf
 		sz = cb(ud, f->name, SPROTO_TINTEGER, index, f->st, &u, sizeof(u));
 		if (sz < 0)
 			return NULL;
-		if (sz == 0)
+		if (sz == 0) //nil object, end of array
 			break;
 		if (size < sizeof(uint64_t))
 			return NULL;
@@ -791,8 +791,11 @@ encode_array(sproto_callback cb, void *ud, struct field *f, uint8_t *data, int s
 			sz = cb(ud, f->name, type, index, f->st, buffer+SIZEOF_LENGTH, size);
 			if (sz < 0)
 				return -1;
-			if (sz == 0)
+			if (sz == 0)  //nil object, end of array
 				break;
+            if (type == SPROTO_TSTRING) {
+                sz--;
+            }
 			fill_size(buffer, sz);
 			buffer += SIZEOF_LENGTH+sz;
 			size -=sz;
@@ -801,7 +804,7 @@ encode_array(sproto_callback cb, void *ud, struct field *f, uint8_t *data, int s
 		break;
 	}
 	sz = buffer - (data + SIZEOF_LENGTH);
-	if (sz == 0)
+	if (sz == 0) //empty array
 		return 0;
 	return fill_size(data, sz);
 }
@@ -839,7 +842,7 @@ sproto_encode(struct sproto_type *st, void * buffer, int size, sproto_callback c
 				sz = cb(ud, f->name, type, 0, NULL, &u, sizeof(u));
 				if (sz < 0)
 					return -1;
-				if (sz == 0)
+				if (sz == 0)  //nil object
 					continue;
 				if (sz == sizeof(uint32_t)) {
 					if (u.u32 < 0x7fff) {

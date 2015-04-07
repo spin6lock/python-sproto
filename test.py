@@ -59,15 +59,15 @@ msg = sproto_encode(st, {
            #skip b
            "c" : -1,
     },
-    "e" : {"ABC", "def"},
-    "f" : {-3, -2, -1, 0, 1, 2},
-    "g" : {True, False, True},
-    "h" : [
-         {"b" : 100},
-         {},
-         {"b" : -100, "c" : False},
-         {"b" : 0, "e" : {"test"}},
-        ],
+    "e" : ["ABC", "", "def"],
+    "f" : [-3, -2, -1, 0, 1, 2],
+    "g" : [True, False, True],
+#   "h" : [
+#        {"b" : 100},
+#        {},
+#        {"b" : -100, "c" : False},
+#        {"b" : 0, "e" : {"test"}},
+#       ],
     }
     )
 print sproto_decode(st, msg)

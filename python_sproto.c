@@ -70,7 +70,7 @@ static int encode(void *ud, const char *tagname, int type,\
             Py_ssize_t len = 0;
             PyString_AsStringAndSize(data, &string_ptr, &len);
             memcpy(value, string_ptr, (size_t)len);
-            return len;
+            return len+1;
         }
         case SPROTO_TSTRUCT: {
             struct encode_ud sub;
@@ -149,7 +149,6 @@ decode(void *ud, const char *tagname, int type, int index, struct sproto_type *s
 		break;
 	}
 	case SPROTO_TSTRING: {
-        //printf("set string\n");
         PyObject *data = Py_BuildValue("s#", (char*)value, length);
         if (PyList_Check(obj)) {
             PyList_Append(obj, data);
