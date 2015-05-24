@@ -11,10 +11,16 @@ struct encode_ud {
     PyObject *table;
 };
 
-static int encode(void *ud, const char *tagname, int type,\
-        int index, struct sproto_type *st, void *value, int length) {
-    //printf("tagname:%s, type:%d, index:%d, length:%d\n", tagname, type, index, length);
-    struct encode_ud *self = ud;
+static int
+encode(const struct sproto_arg *args) {
+    struct encode_ud *self = args->ud;
+    const char *tagname = args->tagname;
+    int tagid = args->tagid;
+    int type = args->type;
+    int index = args->index;
+    int mainindex = args->mainindex;
+    int length = args->length;
+    //printf("tagname:%s, type:%d, index:%d, length:%d, mainindex:%d\n", tagname, type, index, length, mainindex);
     PyObject *data = NULL;
     data = PyDict_GetItemString(self->table, tagname);
     if (data == NULL ) {
@@ -43,19 +49,19 @@ static int encode(void *ud, const char *tagname, int type,\
             long i = PyInt_AsLong(data);
             int vh = i >> 31;
             if (vh == 0 || vh == -1) {
-                *(uint32_t *)value = (uint32_t)i;
+                *(uint32_t *)args->value = (uint32_t)i;
                 return 4;
             } else {
-                *(uint64_t *)value = (uint64_t)i;
+                *(uint64_t *)args->value = (uint64_t)i;
                 return 8;
             }
         }
         case SPROTO_TBOOLEAN: {
             //printf("PyBool Check:%s\n", PyBool_Check(data)?"true":"false");
             if (data == Py_True) {
-                *(int*)value = 1;
+                *(int*)args->value = 1;
             } else {
-                *(int*)value = 0;
+                *(int*)args->value = 0;
             }
             return 4;
         }
@@ -69,13 +75,13 @@ static int encode(void *ud, const char *tagname, int type,\
             char* string_ptr = NULL;
             Py_ssize_t len = 0;
             PyString_AsStringAndSize(data, &string_ptr, &len);
-            memcpy(value, string_ptr, (size_t)len);
+            memcpy(args->value, string_ptr, (size_t)len);
             return len+1;
         }
         case SPROTO_TSTRUCT: {
             struct encode_ud sub;
             sub.table = data;
-            return sproto_encode(st, value, length, encode, &sub);
+            return sproto_encode(args->subtype, args->value, length, encode, &sub);
         }
         default:
             return 0;
@@ -112,9 +118,15 @@ struct decode_ud {
 };
 
 static int
-decode(void *ud, const char *tagname, int type, int index, struct sproto_type *st, void *value, int length) {
+decode(const struct sproto_arg *args) {
+	struct decode_ud * self = args->ud;
+    const char *tagname = args->tagname;
+    int tagid = args->tagid;
+    int type = args->type;
+    int index = args->index;
+    int mainindex = args->mainindex;
+    int length = args->length;
     //printf("tagname:%s, type:%d, index:%d, length:%d\n", tagname, type, index, length);
-	struct decode_ud * self = ud;
     //printf("table pointer: %p\n", (void*)self->table);
     PyObject *obj = self->table;
     if (index > 0) {
@@ -128,7 +140,7 @@ decode(void *ud, const char *tagname, int type, int index, struct sproto_type *s
     switch(type) {
     case SPROTO_TINTEGER: {
         //printf("set integer\n");
-        PyObject *data = Py_BuildValue("i", *(uint64_t*)value);
+        PyObject *data = Py_BuildValue("i", *(uint64_t*)args->value);
         if (PyList_Check(obj)) {
             PyList_Append(obj, data);
         } else {
@@ -139,7 +151,7 @@ decode(void *ud, const char *tagname, int type, int index, struct sproto_type *s
 	}
 	case SPROTO_TBOOLEAN: {
         //printf("set bool\n");
-        PyObject *data = *(int*)value > 0 ? Py_True : Py_False;
+        PyObject *data = *(int*)args->value > 0 ? Py_True : Py_False;
         if (PyList_Check(obj)) {
             PyList_Append(obj, data);
         } else {
@@ -149,7 +161,7 @@ decode(void *ud, const char *tagname, int type, int index, struct sproto_type *s
 		break;
 	}
 	case SPROTO_TSTRING: {
-        PyObject *data = Py_BuildValue("s#", (char*)value, length);
+        PyObject *data = Py_BuildValue("s#", (char*)args->value, length);
         if (PyList_Check(obj)) {
             PyList_Append(obj, data);
         } else {
@@ -168,7 +180,7 @@ decode(void *ud, const char *tagname, int type, int index, struct sproto_type *s
         } else {
             PyDict_SetItemString(self->table, tagname, sub.table);
         }
-		r = sproto_decode(st, value, length, decode, &sub);
+		r = sproto_decode(args->subtype, args->value, length, decode, &sub);
         //printf("int r:%d\n", r);
 		if (r < 0 || r != length) {
             //printf("after decode:%d\n", r);
