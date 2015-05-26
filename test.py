@@ -54,22 +54,22 @@ msg = sproto_encode(st, {
     "a" : "hello",
     "b" : 1000000,
     "c" : True,
-    "d" : [
-            { 
+    "d" : {
+        "world":{ 
                 "a" : "world", 
                 #skip b
                 "c" : -1,
             },
-            {
+        "two":{
                 "a" : "two",
                 "b" : True,
             },
-            {
+        "":{
                 "a" : "",
                 "b" : False,
                 "c" : 1,
-            },
-    ],
+        },
+    },
     "e" : ["ABC", "", "def"],
     "f" : [-3, -2, -1, 0, 1, 2],
     "g" : [True, False, True],

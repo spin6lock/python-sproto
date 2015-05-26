@@ -9,6 +9,7 @@ static PyObject *SprotoError;
 
 struct encode_ud {
     PyObject *table;
+    PyObject *values;
 };
 
 static int
@@ -29,21 +30,32 @@ encode(const struct sproto_arg *args) {
     }
     if (index > 0) {
         if (!PyList_Check(data)) {
-            //printf("data is not list\n");
             if (PyDict_Check(data)) {
-                data = PyDict_Values(data);
+                PyObject *key, *value;
+                Py_ssize_t pos = 0;
+                int count = 0;
+                while (PyDict_Next(data, &pos, &key, &value)) {
+                    count++;
+                    if (index == count) {
+                        data = value;
+                        break;
+                    }
+                }
+                if (index > count) {
+                    return 0; //data is finish
+                }
             } else {
                 PyErr_SetObject(SprotoError, PyString_FromFormat("Expected List or Dict for tagname:%s", tagname));
                 return -1;
             }
-            return 0;
+        } else {
+            int len = PyList_Size(data);
+            if (index > len) {
+                //printf("data is finish\n");
+                return 0;
+            }
+            data = PyList_GetItem(data, index - 1);
         }
-        int len = PyList_Size(data);
-        if (index > len) {
-            //printf("data is finish\n");
-            return 0;
-        }
-        data = PyList_GetItem(data, index - 1);
     }
     //self->tagname = tagname;
     switch(type) {
