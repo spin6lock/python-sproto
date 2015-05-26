@@ -30,6 +30,12 @@ encode(const struct sproto_arg *args) {
     if (index > 0) {
         if (!PyList_Check(data)) {
             //printf("data is not list\n");
+            if (PyDict_Check(data)) {
+                data = PyDict_Values(data);
+            } else {
+                PyErr_SetObject(SprotoError, PyString_FromFormat("Expected List or Dict for tagname:%s", tagname));
+                return -1;
+            }
             return 0;
         }
         int len = PyList_Size(data);
@@ -114,7 +120,9 @@ py_sproto_create(PyObject *self, PyObject *args) {
 }
 
 struct decode_ud {
+    int mainindex;
     PyObject *table;
+    PyObject *map_key;
 };
 
 static int
@@ -129,18 +137,28 @@ decode(const struct sproto_arg *args) {
     //printf("tagname:%s, type:%d, index:%d, length:%d\n", tagname, type, index, length);
     //printf("table pointer: %p\n", (void*)self->table);
     PyObject *obj = self->table;
+    PyObject *data = NULL;
     if (index > 0) {
-        obj = PyDict_GetItemString(self->table, tagname);
-        if (obj == NULL) {
-            PyObject *list = PyList_New(0);
-            PyDict_SetItemString(self->table, tagname, list);
-            obj = list;
+        if (mainindex > 0) {
+            obj = PyDict_GetItemString(self->table, tagname);
+            if (obj == NULL) {
+                PyObject *dict = PyDict_New();
+                PyDict_SetItemString(self->table, tagname, dict);
+                obj = dict;
+            }
+        } else {
+            obj = PyDict_GetItemString(self->table, tagname);
+            if (obj == NULL) {
+                PyObject *list = PyList_New(0);
+                PyDict_SetItemString(self->table, tagname, list);
+                obj = list;
+            }
         }
     }
     switch(type) {
     case SPROTO_TINTEGER: {
         //printf("set integer\n");
-        PyObject *data = Py_BuildValue("i", *(uint64_t*)args->value);
+        data = Py_BuildValue("i", *(uint64_t*)args->value);
         if (PyList_Check(obj)) {
             PyList_Append(obj, data);
         } else {
@@ -151,7 +169,7 @@ decode(const struct sproto_arg *args) {
 	}
 	case SPROTO_TBOOLEAN: {
         //printf("set bool\n");
-        PyObject *data = *(int*)args->value > 0 ? Py_True : Py_False;
+        data = *(int*)args->value > 0 ? Py_True : Py_False;
         if (PyList_Check(obj)) {
             PyList_Append(obj, data);
         } else {
@@ -161,7 +179,7 @@ decode(const struct sproto_arg *args) {
 		break;
 	}
 	case SPROTO_TSTRING: {
-        PyObject *data = Py_BuildValue("s#", (char*)args->value, length);
+        data = Py_BuildValue("s#", (char*)args->value, length);
         if (PyList_Check(obj)) {
             PyList_Append(obj, data);
         } else {
@@ -171,23 +189,45 @@ decode(const struct sproto_arg *args) {
 		break;
 	}
 	case SPROTO_TSTRUCT: {
-        //printf("pack struct\n");
+        //printf("unpack struct\n");
 		struct decode_ud sub;
 		int r;
         sub.table = PyDict_New();
-        if (PyList_Check(obj)) {
-            PyList_Append(obj, sub.table);
+        if (args->mainindex >= 0) {
+            //This struct will set into a map
+            sub.mainindex = args->mainindex;
+            r = sproto_decode(args->subtype, args->value, length, decode, &sub);
+            if (r < 0 || r != length) {
+                //printf("after decode:%d\n", r);
+                return r;
+            }
+            //printf("%s\n", PyString_AsString(PyObject_Str(sub.table)));
+            PyDict_SetItem(obj, sub.map_key, sub.table);
         } else {
-            PyDict_SetItemString(self->table, tagname, sub.table);
+            sub.mainindex = -1;
+            if (PyList_Check(obj)) {
+                PyList_Append(obj, sub.table);
+            } else {
+                PyDict_SetItemString(self->table, tagname, sub.table);
+            }
+            r = sproto_decode(args->subtype, args->value, length, decode, &sub);
+            //printf("int r:%d\n", r);
+            if (r < 0 || r != length) {
+                //printf("after decode:%d\n", r);
+                return r;
+            }
+            break;
         }
-		r = sproto_decode(args->subtype, args->value, length, decode, &sub);
-        //printf("int r:%d\n", r);
-		if (r < 0 || r != length) {
-            //printf("after decode:%d\n", r);
-			return r;
-        }
-		break;
 	}
+    }
+    if (self->mainindex == tagid) {
+        if (data != NULL) {
+            self->map_key = data;
+            //printf("match mainindex, data:%s\n", PyString_AsString(PyObject_Str(data)));
+        } else {
+            PyErr_SetString(SprotoError, "map key type not support");
+            return NULL;
+        }
     }
     return 0;
 }

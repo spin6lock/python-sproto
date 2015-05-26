@@ -54,20 +54,32 @@ msg = sproto_encode(st, {
     "a" : "hello",
     "b" : 1000000,
     "c" : True,
-    "d" : {
-           "a" : "world",
-           #skip b
-           "c" : -1,
-    },
+    "d" : [
+            { 
+                "a" : "world", 
+                #skip b
+                "c" : -1,
+            },
+            {
+                "a" : "two",
+                "b" : True,
+            },
+            {
+                "a" : "",
+                "b" : False,
+                "c" : 1,
+            },
+    ],
     "e" : ["ABC", "", "def"],
     "f" : [-3, -2, -1, 0, 1, 2],
     "g" : [True, False, True],
-#   "h" : [
-#        {"b" : 100},
-#        {},
-#        {"b" : -100, "c" : False},
-#        {"b" : 0, "e" : {"test"}},
-#       ],
+    "h" : [
+            {"b" : 100},
+            {},
+            {"b" : -100, "c" : False},
+            {"b" : 0, "e" : ["test"]},
+        ],
     }
     )
-print sproto_decode(st, msg)
+import pprint
+pprint.pprint(sproto_decode(st, msg))
