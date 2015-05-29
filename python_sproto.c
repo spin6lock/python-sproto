@@ -291,6 +291,7 @@ py_sproto_decode(PyObject *pymodule, PyObject *args) {
     sprototype = PyCapsule_GetPointer(st_capsule, NULL);
     int r = sproto_decode(sprototype, buffer, sz, decode, &self);
     if (r < 0) {
+        PyObject_Del(self.table);
         PyErr_SetString(SprotoError, "sproto c lib error");
         return NULL;
     }
