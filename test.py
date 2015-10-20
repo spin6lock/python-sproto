@@ -1,4 +1,5 @@
 import pysproto
+import sys
 from pysproto import sproto_create, sproto_type, sproto_encode, sproto_decode, sproto_pack, sproto_unpack, sproto_protocol
 
 with open("person.pb", "r") as fh:
@@ -24,6 +25,9 @@ print "result length:", len(result)
 print ''.join(["%02x" %ord(x) for x in result])
 print "-------------------------"
 print sproto_decode(st, result)
+decode_ret = sproto_decode(st, result)
+refcount = sys.getrefcount(decode_ret["name"]) - 1#extra 1 for used in temp args
+assert(refcount==1)
 print "========================="
 pack_result = sproto_pack(result)
 print len(pack_result)

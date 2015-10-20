@@ -209,6 +209,7 @@ decode(const struct sproto_arg *args) {
         } else {
             PyDict_SetItemString(self->table, tagname, data);
         }
+        Py_DECREF(data);
         if (self->mainindex == tagid) {
             self->map_key = data;
             //printf("match mainindex, data:%s\n", PyString_AsString(PyObject_Str(data)));
