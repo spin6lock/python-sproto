@@ -161,6 +161,7 @@ decode(const struct sproto_arg *args) {
                 obj = list;
             }
             PyDict_SetItemString(self->table, tagname, obj);
+            Py_DECREF(obj);
         }
     }
     switch(type) {
@@ -284,10 +285,10 @@ py_sproto_decode(PyObject *pymodule, PyObject *args) {
     int sz = 0;
     struct sproto_type *sprototype;
     struct decode_ud self;
-    self.table = PyDict_New();
     if (!PyArg_ParseTuple(args, "Os#", &st_capsule, &buffer, &sz)) {
         return NULL;
     }
+    self.table = PyDict_New();
     //printf("msg len:%d\n", sz);
     sprototype = PyCapsule_GetPointer(st_capsule, NULL);
     int r = sproto_decode(sprototype, buffer, sz, decode, &self);
@@ -297,7 +298,7 @@ py_sproto_decode(PyObject *pymodule, PyObject *args) {
         return NULL;
     }
     //printf("table size:%d\n", PyDict_Size(self.table));
-    return Py_BuildValue("O", self.table);
+    return self.table;
 }
 
 static PyObject*
@@ -376,7 +377,11 @@ py_sproto_protocol(PyObject *pymodule, PyObject *args) {
     py_request = request == NULL ? Py_None:PyCapsule_New(request, NULL, NULL);
     response = sproto_protoquery(sp, tagid, SPROTO_REQUEST);
     py_response = response == NULL? Py_None:PyCapsule_New(response, NULL, NULL);
-    return Py_BuildValue("OOO", ret, py_request, py_response);
+    PyObject *var = Py_BuildValue("OOO", ret, py_request, py_response);
+    Py_DECREF(ret);
+    Py_DECREF(py_request);
+    Py_DECREF(py_response);
+    return var;
 }
 
 static PyMethodDef pysproto_methods[] = {
