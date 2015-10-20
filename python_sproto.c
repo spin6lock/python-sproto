@@ -93,6 +93,9 @@ encode(const struct sproto_arg *args) {
             char* string_ptr = NULL;
             Py_ssize_t len = 0;
             PyString_AsStringAndSize(data, &string_ptr, &len);
+            if (len > length) {
+                return -1;
+            }
             memcpy(args->value, string_ptr, (size_t)len);
             return len+1;
         }
