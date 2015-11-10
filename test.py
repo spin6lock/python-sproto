@@ -1,6 +1,6 @@
 import pysproto
 from sys import getrefcount
-from pysproto import sproto_create, sproto_type, sproto_encode, sproto_decode, sproto_pack, sproto_unpack, sproto_protocol
+from pysproto import sproto_create, sproto_type, sproto_encode, sproto_decode, sproto_pack, sproto_unpack, sproto_protocol, sproto_dump, sproto_name
 from binascii import b2a_hex, a2b_hex
 import unittest
 
@@ -126,6 +126,16 @@ class TestPySproto(unittest.TestCase):
             "a" : "hello"*100000,
             })
         self.assertEqual(len(sproto_decode(st, msg)["a"]), len("hello") * 100000)
+
+    def test_sproto_dump(self):
+        with open("testall.spb", "r") as fh:
+            content = fh.read()
+        sp = sproto_create(content)
+        sproto_dump(sp)
+
+    def test_sproto_name(self):
+        st, _ = self.get_st_sp()
+        print sproto_name(st)
 
 if __name__ == "__main__":
     unittest.main()

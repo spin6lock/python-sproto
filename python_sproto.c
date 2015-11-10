@@ -387,6 +387,31 @@ py_sproto_protocol(PyObject *pymodule, PyObject *args) {
     return var;
 }
 
+static PyObject*
+py_sproto_dump(PyObject *pymodule, PyObject *args) {
+    PyObject *sp_ptr;
+    if (!PyArg_ParseTuple(args, "O", &sp_ptr)) {
+        return NULL;
+    }
+    struct sproto *sp = PyCapsule_GetPointer(sp_ptr, NULL);
+    sproto_dump(sp);
+    return Py_None;
+}
+
+static PyObject*
+py_sproto_name(PyObject *pymodule, PyObject *args) {
+    PyObject *st_capsule;
+    PyObject *ret;
+    struct sproto_type *sprototype;
+    if (!PyArg_ParseTuple(args, "O", &st_capsule)) {
+        return NULL;
+    }
+    sprototype = PyCapsule_GetPointer(st_capsule, NULL);
+    char *name = sproto_name(sprototype);
+    ret = Py_BuildValue("s", name);
+    return ret;
+}
+
 static PyMethodDef pysproto_methods[] = {
     {"sproto_create", py_sproto_create, METH_VARARGS},
     {"sproto_type", py_sproto_type, METH_VARARGS},
@@ -395,6 +420,8 @@ static PyMethodDef pysproto_methods[] = {
     {"sproto_pack", py_sproto_pack, METH_VARARGS},
     {"sproto_unpack", py_sproto_unpack, METH_VARARGS},
     {"sproto_protocol", py_sproto_protocol, METH_VARARGS},
+    {"sproto_dump", py_sproto_dump, METH_VARARGS},
+    {"sproto_name", py_sproto_name, METH_VARARGS},
     {NULL, NULL}
 };
 
