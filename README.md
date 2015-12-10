@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/spin6lock/python-sproto.svg?branch=master)](https://travis-ci.org/spin6lock/python-sproto)
+
 First, you need a sproto compiler to compile sproto
 description to binary description. You can do it offline with [sproto_dump](https://github.com/lvzixun/sproto_dump).
 Then you can use sproto decode and encode interface.
