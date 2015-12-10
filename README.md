@@ -1,5 +1,5 @@
 First, you need a sproto compiler to compile sproto
-description to binary description. You can do it offline with https://github.com/lvzixun/sproto_dump. 
+description to binary description. You can do it offline with [sproto_dump](https://github.com/lvzixun/sproto_dump).
 Then you can use sproto decode and encode interface.
 
 Interface:
@@ -47,3 +47,8 @@ Compile:
 ```
     
 Then copy the example.so from build directory to python script directory.
+
+Support:
+-------
+Python2.7 supported
+Python2.6 is not supported currently
