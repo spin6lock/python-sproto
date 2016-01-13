@@ -53,6 +53,15 @@ class TestPySproto(unittest.TestCase):
         expected = a2b_hex("3104d407c40763723f797374616c13fe6372797374616cff00406578616d706c651f2e636f6d26110f02c5040531308f3038360f022806053e3130303130")
         self.assertEqual(expected, pack_result)
 
+    """
+    https://github.com/cloudwu/sproto/issues/43 
+    """
+    def test_sproto_pack_bug(self):
+        result = a2b_hex("e7"*30)
+        pack_result = sproto_pack(result)
+        expected = a2b_hex("ff03"+"e7"*30)
+        self.assertEqual(pack_result, expected)
+
     def test_sproto_unpack(self):
         result = a2b_hex("3104d407c40763723f797374616c13fe6372797374616cff00406578616d706c651f2e636f6d26110f02c5040531308f3038360f022806053e3130303130")
         unpack_result = sproto_unpack(result)

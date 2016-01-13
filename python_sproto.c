@@ -311,7 +311,7 @@ py_sproto_pack(PyObject *pymodule, PyObject *args) {
     if (!PyArg_ParseTuple(args, "s#", &srcbuffer, &srcsz)) {
         return NULL;
     }
-    int maxsz = (srcsz + 2047) / 2048 * 2 + srcsz;
+    int maxsz = (srcsz + 2047) / 2048 * 2 + (srcsz + 8 - 1) / 8 * 8;
     void *dstbuffer = PyMem_Malloc(maxsz);
     int bytes = sproto_pack(srcbuffer, srcsz, dstbuffer, maxsz);
     if (bytes > maxsz) {
