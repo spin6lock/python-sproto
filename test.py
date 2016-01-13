@@ -59,7 +59,7 @@ class TestPySproto(unittest.TestCase):
     def test_sproto_pack_bug(self):
         result = a2b_hex("e7"*30)
         pack_result = sproto_pack(result)
-        expected = a2b_hex("ff03"+"e7"*30)
+        expected = a2b_hex("ff03"+"e7"*30+"0000")
         self.assertEqual(pack_result, expected)
 
     def test_sproto_unpack(self):
