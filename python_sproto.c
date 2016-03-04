@@ -1,6 +1,10 @@
 #include <Python.h>
 #include "sproto.h"
 
+#ifdef _WIN32
+#include "msvcint.h"
+#endif
+
 typedef int bool;
 #define true 1
 #define false 0
