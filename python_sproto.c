@@ -305,7 +305,8 @@ py_sproto_decode(PyObject *pymodule, PyObject *args) {
         return NULL;
     }
     //printf("table size:%d\n", PyDict_Size(self.table));
-    return self.table;
+    PyObject *t = Py_BuildValue("Ni", self.table, r);
+    return t;
 }
 
 static PyObject*

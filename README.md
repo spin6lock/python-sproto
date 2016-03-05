@@ -1,5 +1,9 @@
 [![Build Status](https://travis-ci.org/spin6lock/python-sproto.svg?branch=master)](https://travis-ci.org/spin6lock/python-sproto)
 
+IMPORTANT:
+==========
+The sproto_decode api has changed recently, so you may need to change the code to accept ret value. Sorry for the inconvenient.
+
 First, you need a sproto compiler to compile sproto
 description to binary description. You can do it offline with [sproto_dump](https://github.com/lvzixun/sproto_dump).
 Then you can use sproto decode and encode interface.
@@ -19,9 +23,9 @@ Interface:
 
     encode data in dict with entity description
 
-* data_dict = sproto_decode(sproto_type_obj, binary_str)
+* data_dict, ret = sproto_decode(sproto_type_obj, binary_str)
 
-    decode data in message with entity description
+    decode data in message with entity description, ret means original size in binary_str
     
 * protocol_id_or_name, protocol_request, protocol_response = sproto_protocol(sproto_obj, name_or_protocol_id)
 

@@ -33,13 +33,14 @@ class TestPySproto(unittest.TestCase):
         expected = a2b_hex("04000000d40700000000070000006372797374616c130000006372797374616c406578616d706c652e636f6d260000000f0000000200000004000500000031303038360f000000020000000600050000003130303130")
         self.assertEqual(result, expected)
         #print b2a_hex(result)
-        dest = sproto_decode(st, result)
+        dest, r = sproto_decode(st, result)
         self.assertEqual(source, dest)
+        self.assertEqual(r, len(expected))
 
     def test_refcount(self):
         st, sp = self.get_st_sp()
         result = a2b_hex("04000000d40700000000070000006372797374616c130000006372797374616c406578616d706c652e636f6d260000000f0000000200000004000500000031303038360f000000020000000600050000003130303130")
-        decode_ret = sproto_decode(st, result)
+        decode_ret, r = sproto_decode(st, result)
         self.assertEqual(getrefcount(decode_ret["name"]) - 1, 1)#extra 1 for used in temp args
         self.assertEqual(getrefcount(decode_ret["phone"]) - 1, 1)#extra 1 for used in temp args
         self.assertEqual(getrefcount(decode_ret["id"]) - 1, 1)#extra 1 for used in temp args
@@ -121,20 +122,23 @@ class TestPySproto(unittest.TestCase):
                 ],
             }
         msg = sproto_encode(st, source)
-        dest = sproto_decode(st, msg)
+        dest, r = sproto_decode(st, msg)
         #import pprint
         #pprint.pprint(sproto_decode(st, msg))
         self.assertEqual(dest, source)
+        self.assertEqual(r, len(msg))
 
     def test_long_string_encode(self):
         with open("testall.spb", "r") as fh:
             content = fh.read()
         sp = sproto_create(content)
         st = sproto_type(sp, "foobar")
+        origin_str = "hello"*100000
         msg = sproto_encode(st, {
-            "a" : "hello"*100000,
+            "a" : origin_str,
             })
-        self.assertEqual(len(sproto_decode(st, msg)["a"]), len("hello") * 100000)
+        decode_result, r = sproto_decode(st, msg)
+        self.assertEqual(decode_result["a"], origin_str)
 
     def test_sproto_dump(self):
         with open("testall.spb", "r") as fh:
