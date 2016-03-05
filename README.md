@@ -57,4 +57,5 @@ Then copy the example.so from build directory to python script directory.
 Support:
 -------
 Python2.7 supported
+
 Python2.6 is not supported currently
