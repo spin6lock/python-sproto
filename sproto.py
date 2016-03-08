@@ -19,18 +19,18 @@ class Sproto(object):
     def encode(self, st, data):
         if isinstance(st, basestring):
             st = self.querytype(st)
-        return core.sproto_encode(st, data);
+        return core.sproto_encode(st, data)
 
     def decode(self, st, chunk):
         if isinstance(st, basestring):
             st = self.querytype(st)
-        return core.sproto_decode(self.sp, st, chunk)
+        return core.sproto_decode(st, chunk)
 
     def pack(self, chunk):
-        return core.sproto_pack(chunk);
+        return core.sproto_pack(chunk)
 
     def unpack(self, chunk):
-        return core.sproto_unpack(self.sp, chunk);
+        return core.sproto_unpack(chunk)
 
 class SprotoRpc(object):
     def __init__(self, c2s_chunk, s2c_chunk, packagename):
@@ -78,8 +78,7 @@ class SprotoRpc(object):
 
     def response(self, protoname, args, session):
         sp = self._s2c
-        tag,resp,response = sp.protocol(protoname)
+        tag, _, resp = sp.protocol(protoname)
         header = sp.encode(self._package, {"session":session})
         content = sp.encode(resp, args) if args else ""
         return sp.pack(header + content)
-            
