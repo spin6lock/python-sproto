@@ -86,6 +86,14 @@ class TestPySproto(unittest.TestCase):
         proto = sproto_protocol(sp, "foobar")
         self.assertEqual(getrefcount(proto[1])-1, 1)
 
+    def test_sproto_protocal(self):
+        with open("protocol.spb", "r") as fh:
+            content = fh.read()
+        sp = sproto_create(content)
+        tag, req, resp = sproto_protocol(sp, "foo")
+        self.assertEqual(req, None)
+        self.assertNotEqual(resp, None)
+
     def test_complex_encode_decode(self):
         with open("testall.spb", "r") as fh:
             content = fh.read()

@@ -383,12 +383,9 @@ py_sproto_protocol(PyObject *pymodule, PyObject *args) {
     PyObject *py_response;
     request = sproto_protoquery(sp, tagid, SPROTO_REQUEST);
     py_request = request == NULL ? Py_None:PyCapsule_New(request, NULL, NULL);
-    response = sproto_protoquery(sp, tagid, SPROTO_REQUEST);
+    response = sproto_protoquery(sp, tagid, SPROTO_RESPONSE);
     py_response = response == NULL? Py_None:PyCapsule_New(response, NULL, NULL);
-    PyObject *var = Py_BuildValue("OOO", ret, py_request, py_response);
-    Py_DECREF(ret);
-    Py_DECREF(py_request);
-    Py_DECREF(py_response);
+    PyObject *var = Py_BuildValue("NNN", ret, py_request, py_response);
     return var;
 }
 

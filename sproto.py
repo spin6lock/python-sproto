@@ -7,12 +7,11 @@ class Sproto(object):
         self.proto = {}
 
     def querytype(self, tagname):
-        print('tagname', tagname)
         if not tagname in self.st:
             self.st[tagname] = core.sproto_type(self.sp, tagname)
         return self.st[tagname]
 
-    def protocal(self, protoname):
+    def protocol(self, protoname):
         if not protoname in self.proto:
             self.proto[protoname] = core.sproto_protocol(self.sp, protoname)
         return self.proto[protoname]
@@ -47,7 +46,7 @@ class SprotoRpc(object):
         content = data[size:]
         if header.get("type", 0):
             # request
-            protoname, req,resp = sp.protocal(header["type"])
+            protoname, req, resp = sp.protocol(header["type"])
             result,_ = sp.decode(req, content) if req else None
             ret = {"type":"REQUEST", "proto": protoname, "msg":result, "session":None}
             if header.get("session", 0):
@@ -62,13 +61,13 @@ class SprotoRpc(object):
             ret = {"type":"RESPONSE", "session":session, "msg":None}
 
             if response != True:
-                ret["msg"],_ = sp.decode(response, content)
+                ret["msg"], _ = sp.decode(response, content)
 
         return ret
             
-    def request(self, protoname, args, session = 0):
+    def request(self, protoname, args = None, session = 0):
         sp = self._c2s
-        tag, req,resp = sp.protocal(protoname)
+        tag, req, resp = sp.protocol(protoname)
         header = sp.encode(self._package, {"type":tag, "session":session})
         if session and not resp:
             raise ValueError("proto no response")
@@ -79,9 +78,7 @@ class SprotoRpc(object):
 
     def response(self, protoname, args, session):
         sp = self._s2c
-        tag, _,resp = sp.protocal(protoname)
+        tag, _, resp = sp.protocol(protoname)
         header = sp.encode(self._package, {"session":session})
         content = sp.encode(resp, args) if args else ""
         return sp.pack(header + content)
-            
-    
