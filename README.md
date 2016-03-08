@@ -17,6 +17,7 @@ Example:
   sproto_obj = SprotoRpc(content, content, base_package) #base_package is your package struct name
   p = sproto_obj.encode('client.hello', {'foo':'bar'})
   sock.send(p)
+```
 
 Error Handling:
 ---------------
