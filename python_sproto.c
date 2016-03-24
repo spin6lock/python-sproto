@@ -342,14 +342,21 @@ py_sproto_unpack(PyObject *pymodule, PyObject *args) {
         return Py_None;
     }
     if (r > dstsz) {
-        dstbuffer = PyMem_Realloc(dstbuffer, r);
+        void *new_ptr = PyMem_Realloc(dstbuffer, r);
+        if (new_ptr == NULL) {
+            PyMem_Free(dstbuffer);
+            PyErr_SetObject(SprotoError, PyString_FromFormat("out of memory"));
+            return Py_None;
+        }
+        dstbuffer = new_ptr;
     }
+    dstsz = r;
     r = sproto_unpack(srcbuffer, srcsz, dstbuffer, dstsz);
     if (r < 0) {
         PyMem_Free(dstbuffer);
         return Py_None;
     }
-    PyObject *t = Py_BuildValue("s#", dstbuffer, r);
+    PyObject *t = Py_BuildValue("s#", dstbuffer, dstsz);
     PyMem_Free(dstbuffer);
     return t;
 }

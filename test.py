@@ -70,6 +70,15 @@ class TestPySproto(unittest.TestCase):
         expected = a2b_hex("04000000d40700000000070000006372797374616c130000006372797374616c406578616d706c652e636f6d260000000f0000000200000004000500000031303038360f0000000200000006000500000031303031300000")
         self.assertEqual(expected, unpack_result)
 
+    """
+    https://github.com/spin6lock/python-sproto/issues/6
+    """
+    def test_sproto_unpack_bug(self):
+        data = a2b_hex("123456789ABCDEF" * 256)
+        pack_result = sproto_pack(data)
+        unpack_data = sproto_unpack(pack_result)
+        self.assertEqual(data, unpack_data)
+
     def test_exception_catch(self):
         st, sp = self.get_st_sp()
         with self.assertRaises(pysproto.error) as se:
