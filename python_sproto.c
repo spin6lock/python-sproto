@@ -64,18 +64,19 @@ encode(const struct sproto_arg *args) {
     //self->tagname = tagname;
     switch(type) {
         case SPROTO_TINTEGER: {
-            if (!PyInt_Check(data)) {
-                PyErr_SetObject(SprotoError, PyString_FromFormat("type mismatch, tag:%s, expected int", tagname));
-                return -1;
-            }
-            long i = PyInt_AsLong(data);
-            int vh = i >> 31;
-            if (vh == 0 || vh == -1) {
-                *(uint32_t *)args->value = (uint32_t)i;
-                return 4;
+            if (PyInt_Check(data) || PyLong_Check(data)) {
+                long long i = PyLong_AsLongLong(data);
+                long long vh = i >> 31; 
+                if (vh == 0 || vh == -1) {
+                    *(int32_t *)args->value = (int32_t)i;
+                    return 4;
+                } else {
+                    *(int64_t *)args->value = (int64_t)i;
+                    return 8; 
+                }
             } else {
-                *(uint64_t *)args->value = (uint64_t)i;
-                return 8;
+                PyErr_SetObject(SprotoError, PyString_FromFormat("type mismatch, tag:%s, expected int or long", tagname));
+                return -1;
             }
         }
         case SPROTO_TBOOLEAN: {
@@ -173,8 +174,16 @@ decode(const struct sproto_arg *args) {
     }
     switch(type) {
     case SPROTO_TINTEGER: {
-        data = Py_BuildValue("i", *(uint64_t*)args->value);
-		break;
+        if (length == 4) {
+            data = Py_BuildValue("i", *(int32_t*)args->value);
+            break;
+        } else if (length == 8) {
+            data = Py_BuildValue("l", *(int64_t*)args->value);
+            break;
+        } else {
+            PyErr_SetString(SprotoError, "unexpected integer length");
+            return NULL;
+        }
 	}
 	case SPROTO_TBOOLEAN: {
         data = *(int*)args->value > 0 ? Py_True : Py_False;

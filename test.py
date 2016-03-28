@@ -86,7 +86,7 @@ class TestPySproto(unittest.TestCase):
                 "name":"t",
                 "id":"fake_id",
             })
-        self.assertEqual(se.exception.message, "type mismatch, tag:id, expected int")
+        self.assertEqual(se.exception.message, "type mismatch, tag:id, expected int or long")
 
     def test_sproto_protocal_refcount(self):
         with open("protocol.spb", "r") as fh:
@@ -166,6 +166,19 @@ class TestPySproto(unittest.TestCase):
     def test_sproto_name(self):
         st, _ = self.get_st_sp()
         print sproto_name(st)
+
+    #https://github.com/spin6lock/python-sproto/issues/7
+    def test_long_long_cutoff(self):
+        with open("testall.spb", "r") as fh:
+            content = fh.read()
+        sp = sproto_create(content)
+        st = sproto_type(sp, "foobar")
+        b = pow(2, 63) - 1
+        msg = sproto_encode(st, {
+            "b" : b,
+            })
+        decode_result, r = sproto_decode(st, msg)
+        self.assertEqual(decode_result["b"], b)
 
 if __name__ == "__main__":
     unittest.main()
