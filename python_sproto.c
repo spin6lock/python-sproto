@@ -25,12 +25,16 @@ encode(const struct sproto_arg *args) {
     int index = args->index;
     int mainindex = args->mainindex;
     int length = args->length;
-    //printf("tagname:%s, type:%d, index:%d, length:%d, mainindex:%d\n", tagname, type, index, length, mainindex);
+    //printf("tagname:%s, type:%d, index:%d, length:%d, mainindex:%d, subtype:%d\n", tagname, type, index, length, mainindex, args->subtype);
     PyObject *data = NULL;
     data = PyDict_GetItemString(self->table, tagname);
     if (data == NULL ) {
-        //printf("\tnot exist\n");
-        return 0;
+        if (index > 0) {
+            //printf("%s\t no array\n", tagname);
+            return SPROTO_CB_NOARRAY;
+        }
+        //printf("%s\tnot exist\n", tagname);
+        return SPROTO_CB_NIL;
     }
     if (index > 0) {
         if (!PyList_Check(data)) {
@@ -46,17 +50,18 @@ encode(const struct sproto_arg *args) {
                     }
                 }
                 if (index > count) {
-                    return 0; //data is finish
+                    //printf("data is finish, index:%d, len:%d\n", index, count);
+                    return SPROTO_CB_NIL; //data is finish
                 }
             } else {
                 PyErr_SetObject(SprotoError, PyString_FromFormat("Expected List or Dict for tagname:%s", tagname));
-                return -1;
+                return SPROTO_CB_ERROR;
             }
         } else {
             int len = PyList_Size(data);
             if (index > len) {
-                //printf("data is finish\n");
-                return 0;
+                //printf("data is finish, index:%d, len:%d\n", index, len);
+                return SPROTO_CB_NIL;
             }
             data = PyList_GetItem(data, index - 1);
         }
@@ -92,22 +97,28 @@ encode(const struct sproto_arg *args) {
             //printf("PyString Check:%s\n", PyString_Check(data)?"true":"false");
             if (!PyString_Check(data)) {
                 PyErr_SetObject(SprotoError, PyString_FromFormat("type mismatch, tag:%s, expected string", tagname));
-                return -1;
+                return SPROTO_CB_ERROR;
             }
 
             char* string_ptr = NULL;
             Py_ssize_t len = 0;
             PyString_AsStringAndSize(data, &string_ptr, &len);
             if (len > length) {
-                return -1;
+                return SPROTO_CB_ERROR;
             }
             memcpy(args->value, string_ptr, (size_t)len);
-            return len+1;
+            return len;
         }
         case SPROTO_TSTRUCT: {
             struct encode_ud sub;
             sub.table = data;
-            return sproto_encode(args->subtype, args->value, length, encode, &sub);
+            //printf("encode SPROTO_TSTRUCT\n");
+            int r = sproto_encode(args->subtype, args->value, length, encode, &sub);
+            if (r < 0) {
+                //printf("sproto cb error\n");
+                return SPROTO_CB_ERROR;
+            }
+            return r;
         }
         default:
             return 0;
@@ -158,7 +169,7 @@ decode(const struct sproto_arg *args) {
     //printf("table pointer: %p\n", (void*)self->table);
     PyObject *obj = self->table;
     PyObject *data = NULL;
-    if (index > 0) {
+    if (index != 0) {
         obj = PyDict_GetItemString(self->table, tagname);
         if (obj == NULL) {
             if (mainindex > 0) {
@@ -170,6 +181,9 @@ decode(const struct sproto_arg *args) {
             }
             PyDict_SetItemString(self->table, tagname, obj);
             Py_DECREF(obj);
+            if (index < 0) {
+                return 0;
+            }
         }
     }
     switch(type) {
@@ -201,8 +215,11 @@ decode(const struct sproto_arg *args) {
             //This struct will set into a map
             sub.mainindex = args->mainindex;
             r = sproto_decode(args->subtype, args->value, length, decode, &sub);
-            if (r < 0 || r != length) {
+            if (r < 0) {
                 //printf("after decode:%d\n", r);
+                return SPROTO_CB_ERROR;
+            }
+            if (r != length) {
                 return r;
             }
             //printf("%s\n", PyString_AsString(PyObject_Str(sub.table)));
@@ -212,8 +229,11 @@ decode(const struct sproto_arg *args) {
             data = sub.table;
             r = sproto_decode(args->subtype, args->value, length, decode, &sub);
             //printf("int r:%d\n", r);
-            if (r < 0 || r != length) {
+            if (r < 0) {
                 //printf("after decode:%d\n", r);
+                return SPROTO_CB_ERROR;
+            }
+            if (r != length) {
                 return r;
             }
             break;
