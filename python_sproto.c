@@ -25,15 +25,15 @@ encode(const struct sproto_arg *args) {
     int index = args->index;
     int mainindex = args->mainindex;
     int length = args->length;
-    printf("tagname:%s, type:%d, index:%d, length:%d, mainindex:%d, subtype:%d\n", tagname, type, index, length, mainindex, args->subtype);
+    //printf("tagname:%s, type:%d, index:%d, length:%d, mainindex:%d, subtype:%d\n", tagname, type, index, length, mainindex, args->subtype);
     PyObject *data = NULL;
     data = PyDict_GetItemString(self->table, tagname);
     if (data == NULL ) {
         if (index > 0) {
-            printf("%s\t no array\n", tagname);
+            //printf("%s\t no array\n", tagname);
             return SPROTO_CB_NOARRAY;
         }
-        printf("%s\tnot exist\n", tagname);
+        //printf("%s\tnot exist\n", tagname);
         return SPROTO_CB_NIL;
     }
     if (index > 0) {
@@ -50,7 +50,7 @@ encode(const struct sproto_arg *args) {
                     }
                 }
                 if (index > count) {
-                    return SPROTO_CB_NOARRAY; //data is finish
+                    return SPROTO_CB_NIL; //data is finish
                 }
             } else {
                 PyErr_SetObject(SprotoError, PyString_FromFormat("Expected List or Dict for tagname:%s", tagname));
@@ -59,8 +59,8 @@ encode(const struct sproto_arg *args) {
         } else {
             int len = PyList_Size(data);
             if (index > len) {
-                printf("data is finish, index:%d, len:%d\n", index, len);
-                return SPROTO_CB_NOARRAY;
+                //printf("data is finish, index:%d, len:%d\n", index, len);
+                return SPROTO_CB_NIL;
             }
             data = PyList_GetItem(data, index - 1);
         }
@@ -84,7 +84,7 @@ encode(const struct sproto_arg *args) {
             }
         }
         case SPROTO_TBOOLEAN: {
-            printf("PyBool Check:%s\n", PyBool_Check(data)?"true":"false");
+            //printf("PyBool Check:%s\n", PyBool_Check(data)?"true":"false");
             if (data == Py_True) {
                 *(int*)args->value = 1;
             } else {
@@ -93,7 +93,7 @@ encode(const struct sproto_arg *args) {
             return 4;
         }
         case SPROTO_TSTRING: {
-            printf("PyString Check:%s\n", PyString_Check(data)?"true":"false");
+            //printf("PyString Check:%s\n", PyString_Check(data)?"true":"false");
             if (!PyString_Check(data)) {
                 PyErr_SetObject(SprotoError, PyString_FromFormat("type mismatch, tag:%s, expected string", tagname));
                 return SPROTO_CB_ERROR;
@@ -111,7 +111,7 @@ encode(const struct sproto_arg *args) {
         case SPROTO_TSTRUCT: {
             struct encode_ud sub;
             sub.table = data;
-            printf("encode SPROTO_TSTRUCT\n");
+            //printf("encode SPROTO_TSTRUCT\n");
             int r = sproto_encode(args->subtype, args->value, length, encode, &sub);
             if (r < 0) {
                 printf("sproto cb error\n");
