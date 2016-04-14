@@ -196,7 +196,7 @@ decode(const struct sproto_arg *args) {
             break;
         } else {
             PyErr_SetString(SprotoError, "unexpected integer length");
-            return NULL;
+            return SPROTO_CB_ERROR;
         }
 	}
 	case SPROTO_TBOOLEAN: {
@@ -254,8 +254,8 @@ decode(const struct sproto_arg *args) {
     } else {
         if (self->mainindex == tagid) {
             PyErr_SetString(SprotoError, "map key type not support");
+            return SPROTO_CB_ERROR;
         }
-        return NULL;
     }
     return 0;
 }
@@ -329,7 +329,7 @@ py_sproto_decode(PyObject *pymodule, PyObject *args) {
     sprototype = PyCapsule_GetPointer(st_capsule, NULL);
     int r = sproto_decode(sprototype, buffer, sz, decode, &self);
     if (r < 0) {
-        PyObject_Del(self.table);
+        Py_XDECREF(self.table);
         PyErr_SetString(SprotoError, "sproto c lib error");
         return NULL;
     }
