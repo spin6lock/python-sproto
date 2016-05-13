@@ -7,6 +7,7 @@ pysproto: python_sproto.c
 test: pysproto
 	python test.py
 	python test_wild_pointer.py
+	python test_mem.py
 
 clean:
 	rm *.so

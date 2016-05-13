@@ -5,7 +5,6 @@ pysproto_module = Extension('pysproto',
 
 setup (name = "python_sproto",
         version = '0.1',
-        package = ["python_sproto"],
         description = "python binding to sproto, a serialize library",
         long_description = "Documentation and bug report: http://github.com/spin6lock/python-sproto",
         author = "spin6lock",

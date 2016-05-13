@@ -180,7 +180,7 @@ decode(const struct sproto_arg *args) {
                 obj = list;
             }
             PyDict_SetItemString(self->table, tagname, obj);
-            Py_DECREF(obj);
+            Py_XDECREF(obj);
             if (index < 0) {
                 return 0;
             }
@@ -200,7 +200,7 @@ decode(const struct sproto_arg *args) {
         }
 	}
 	case SPROTO_TBOOLEAN: {
-        data = *(int*)args->value > 0 ? Py_True : Py_False;
+        data = PyBool_FromLong(*(int*)args->value);
 		break;
 	}
 	case SPROTO_TSTRING: {
@@ -246,7 +246,7 @@ decode(const struct sproto_arg *args) {
         } else {
             PyDict_SetItemString(self->table, tagname, data);
         }
-        Py_DECREF(data);
+        Py_XDECREF(data);
         if (self->mainindex == tagid) {
             self->map_key = data;
             //printf("match mainindex, data:%s\n", PyString_AsString(PyObject_Str(data)));
