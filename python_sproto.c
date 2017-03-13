@@ -20,10 +20,8 @@ static int
 encode(const struct sproto_arg *args) {
     struct encode_ud *self = args->ud;
     const char *tagname = args->tagname;
-    int tagid = args->tagid;
     int type = args->type;
     int index = args->index;
-    int mainindex = args->mainindex;
     int length = args->length;
     //printf("tagname:%s, type:%d, index:%d, length:%d, mainindex:%d, subtype:%d\n", tagname, type, index, length, mainindex, args->subtype);
     PyObject *data = NULL;
@@ -70,7 +68,13 @@ encode(const struct sproto_arg *args) {
     switch(type) {
         case SPROTO_TINTEGER: {
             if (PyInt_Check(data) || PyLong_Check(data)) {
-                long long i = PyLong_AsLongLong(data);
+                long long raw = PyLong_AsLongLong(data);
+                long long i;
+                if (args->extra) {
+                    i = raw * args->extra + 0.5;
+                } else {
+                    i = raw;
+                }
                 long long vh = i >> 31; 
                 if (vh == 0 || vh == -1) {
                     *(int32_t *)args->value = (int32_t)i;
@@ -188,11 +192,15 @@ decode(const struct sproto_arg *args) {
     }
     switch(type) {
     case SPROTO_TINTEGER: {
+        long long i = (long long)args->value;
+        if (args->extra) {
+            i /= args->extra;
+        }
         if (length == 4) {
-            data = Py_BuildValue("i", *(int32_t*)args->value);
+            data = Py_BuildValue("i", *(int32_t*)i);
             break;
         } else if (length == 8) {
-            data = Py_BuildValue("l", *(int64_t*)args->value);
+            data = Py_BuildValue("l", *(int64_t*)i);
             break;
         } else {
             PyErr_SetString(SprotoError, "unexpected integer length");
@@ -204,7 +212,11 @@ decode(const struct sproto_arg *args) {
 		break;
 	}
 	case SPROTO_TSTRING: {
-        data = Py_BuildValue("s#", (char*)args->value, length);
+        if (args->extra == SPROTO_TSTRING_STRING) {
+            data = Py_BuildValue("u#", (char*)args->value, length);
+        } else {
+            data = Py_BuildValue("s#", (char*)args->value, length);
+        }
 		break;
 	}
 	case SPROTO_TSTRUCT: {
@@ -445,7 +457,7 @@ py_sproto_name(PyObject *pymodule, PyObject *args) {
         return NULL;
     }
     sprototype = PyCapsule_GetPointer(st_capsule, NULL);
-    char *name = sproto_name(sprototype);
+    const char *name = sproto_name(sprototype);
     ret = Py_BuildValue("s", name);
     return ret;
 }
