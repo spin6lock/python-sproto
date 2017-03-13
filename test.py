@@ -195,8 +195,6 @@ class TestPySproto(unittest.TestCase):
                 ],
             }
         msg = sproto_encode(st, source)
-        with open("foobar_empty", "w") as fout:
-            fout.write(msg)
         dest, r = sproto_decode(st, msg)
         #import pprint
         #pprint.pprint(sproto_decode(st, msg))

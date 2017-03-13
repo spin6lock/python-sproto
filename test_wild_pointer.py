@@ -3,7 +3,7 @@ from pysproto import sproto_create, sproto_type, sproto_encode, sproto_decode
 import gc
 
 print "***************************"
-with open("person.pb", "r") as fh:
+with open("person.spb", "r") as fh:
     content = fh.read()
 def get_st(content, tag):
     sp = sproto_create(content)
