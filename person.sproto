@@ -1,0 +1,17 @@
+.Person {
+	name 0 : binary
+	id 1 : integer
+	email 2 : binary
+
+	.PhoneNumber {
+		number 0 : binary
+		type 1 : integer
+	}
+
+	phone 3 : *PhoneNumber
+}
+
+.AddressBook {
+	person 0 : *Person(id)
+	others 1 : *Person
+}

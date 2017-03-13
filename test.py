@@ -6,7 +6,7 @@ import unittest
 
 class TestPySproto(unittest.TestCase):
     def get_st_sp(self):
-        with open("person.pb", "r") as fh:
+        with open("person.spb", "r") as fh:
             content = fh.read()
             sp = sproto_create(content)
             st = sproto_type(sp, "Person")
@@ -195,14 +195,23 @@ class TestPySproto(unittest.TestCase):
                 ],
             }
         msg = sproto_encode(st, source)
-        with open("foobar_empty", "w") as fout:
-            fout.write(msg)
         dest, r = sproto_decode(st, msg)
         #import pprint
         #pprint.pprint(sproto_decode(st, msg))
         self.assertEqual(dest, source)
         self.assertEqual(r, len(msg))
 
+    def test_unicode_string(self):
+        with open("testall.spb", "r") as fh:
+            content = fh.read()
+        sp = sproto_create(content)
+        st = sproto_type(sp, "Person")
+        origin_str = u'hello'
+        msg = sproto_encode(st, {
+            'name' : origin_str,
+            })
+        decode_result, r = sproto_decode(st, msg)
+        self.assertEqual(decode_result['name'], origin_str)
 
 if __name__ == "__main__":
     unittest.main()

@@ -10,7 +10,8 @@ test: pysproto
 	python test_mem.py
 
 clean:
-	rm *.so
+	rm -f *.so
 	rm -rf python_sproto.egg-info
 	rm -rf build
 	rm -rf dist
+	rm -f core

@@ -20,10 +20,8 @@ static int
 encode(const struct sproto_arg *args) {
     struct encode_ud *self = args->ud;
     const char *tagname = args->tagname;
-    int tagid = args->tagid;
     int type = args->type;
     int index = args->index;
-    int mainindex = args->mainindex;
     int length = args->length;
     //printf("tagname:%s, type:%d, index:%d, length:%d, mainindex:%d, subtype:%d\n", tagname, type, index, length, mainindex, args->subtype);
     PyObject *data = NULL;
@@ -70,7 +68,13 @@ encode(const struct sproto_arg *args) {
     switch(type) {
         case SPROTO_TINTEGER: {
             if (PyInt_Check(data) || PyLong_Check(data)) {
-                long long i = PyLong_AsLongLong(data);
+                long long raw = PyLong_AsLongLong(data);
+                long long i;
+                if (args->extra) {
+                    i = raw * args->extra + 0.5;
+                } else {
+                    i = raw;
+                }
                 long long vh = i >> 31; 
                 if (vh == 0 || vh == -1) {
                     *(int32_t *)args->value = (int32_t)i;
@@ -95,18 +99,30 @@ encode(const struct sproto_arg *args) {
         }
         case SPROTO_TSTRING: {
             //printf("PyString Check:%s\n", PyString_Check(data)?"true":"false");
-            if (!PyString_Check(data)) {
-                PyErr_SetObject(SprotoError, PyString_FromFormat("type mismatch, tag:%s, expected string", tagname));
-                return SPROTO_CB_ERROR;
-            }
-
-            char* string_ptr = NULL;
             Py_ssize_t len = 0;
-            PyString_AsStringAndSize(data, &string_ptr, &len);
+            char* string_ptr = NULL;
+            PyObject *tmp_str = NULL;
+            if (args->extra == SPROTO_TSTRING_BINARY) { //binary string
+                if (!PyString_Check(data)) {
+                    PyErr_SetObject(SprotoError, PyString_FromFormat("type mismatch, tag:%s, expected string", tagname));
+                    return SPROTO_CB_ERROR;
+                }
+                PyString_AsStringAndSize(data, &string_ptr, &len);
+            } else {    //unicode string
+                if (!PyUnicode_Check(data)) {
+                    PyErr_SetObject(SprotoError, PyString_FromFormat("type mismatch, tag:%s, expected unicode", tagname));
+                    return SPROTO_CB_ERROR;
+                }
+                tmp_str = PyUnicode_AsUTF8String(data);
+                PyString_AsStringAndSize(tmp_str, &string_ptr, &len);
+            }
             if (len > length) {
                 return SPROTO_CB_ERROR;
             }
             memcpy(args->value, string_ptr, (size_t)len);
+            if (tmp_str != NULL) {
+                Py_XDECREF(tmp_str);
+            }
             return len;
         }
         case SPROTO_TSTRUCT: {
@@ -188,11 +204,15 @@ decode(const struct sproto_arg *args) {
     }
     switch(type) {
     case SPROTO_TINTEGER: {
+        long long i = (long long)args->value;
+        if (args->extra) {
+            i /= args->extra;
+        }
         if (length == 4) {
-            data = Py_BuildValue("i", *(int32_t*)args->value);
+            data = Py_BuildValue("i", *(int32_t*)i);
             break;
         } else if (length == 8) {
-            data = Py_BuildValue("l", *(int64_t*)args->value);
+            data = Py_BuildValue("l", *(int64_t*)i);
             break;
         } else {
             PyErr_SetString(SprotoError, "unexpected integer length");
@@ -204,7 +224,11 @@ decode(const struct sproto_arg *args) {
 		break;
 	}
 	case SPROTO_TSTRING: {
-        data = Py_BuildValue("s#", (char*)args->value, length);
+        if (args->extra == SPROTO_TSTRING_STRING) {
+            data = PyUnicode_DecodeUTF8((char*)args->value, length, "decode utf8-encode unicode string");
+        } else {
+            data = Py_BuildValue("s#", (char*)args->value, length);
+        }
 		break;
 	}
 	case SPROTO_TSTRUCT: {
@@ -445,7 +469,7 @@ py_sproto_name(PyObject *pymodule, PyObject *args) {
         return NULL;
     }
     sprototype = PyCapsule_GetPointer(st_capsule, NULL);
-    char *name = sproto_name(sprototype);
+    const char *name = sproto_name(sprototype);
     ret = Py_BuildValue("s", name);
     return ret;
 }
