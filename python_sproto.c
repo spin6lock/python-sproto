@@ -99,18 +99,30 @@ encode(const struct sproto_arg *args) {
         }
         case SPROTO_TSTRING: {
             //printf("PyString Check:%s\n", PyString_Check(data)?"true":"false");
-            if (!PyString_Check(data)) {
-                PyErr_SetObject(SprotoError, PyString_FromFormat("type mismatch, tag:%s, expected string", tagname));
-                return SPROTO_CB_ERROR;
-            }
-
-            char* string_ptr = NULL;
             Py_ssize_t len = 0;
-            PyString_AsStringAndSize(data, &string_ptr, &len);
+            char* string_ptr = NULL;
+            PyObject *tmp_str = NULL;
+            if (args->extra == SPROTO_TSTRING_BINARY) { //binary string
+                if (!PyString_Check(data)) {
+                    PyErr_SetObject(SprotoError, PyString_FromFormat("type mismatch, tag:%s, expected string", tagname));
+                    return SPROTO_CB_ERROR;
+                }
+                PyString_AsStringAndSize(data, &string_ptr, &len);
+            } else {    //unicode string
+                if (!PyUnicode_Check(data)) {
+                    PyErr_SetObject(SprotoError, PyString_FromFormat("type mismatch, tag:%s, expected unicode", tagname));
+                    return SPROTO_CB_ERROR;
+                }
+                tmp_str = PyUnicode_AsUTF8String(data);
+                PyString_AsStringAndSize(tmp_str, &string_ptr, &len);
+            }
             if (len > length) {
                 return SPROTO_CB_ERROR;
             }
             memcpy(args->value, string_ptr, (size_t)len);
+            if (tmp_str != NULL) {
+                Py_XDECREF(tmp_str);
+            }
             return len;
         }
         case SPROTO_TSTRUCT: {
@@ -213,7 +225,7 @@ decode(const struct sproto_arg *args) {
 	}
 	case SPROTO_TSTRING: {
         if (args->extra == SPROTO_TSTRING_STRING) {
-            data = Py_BuildValue("u#", (Py_UNICODE *)args->value, length);
+            data = PyUnicode_DecodeUTF8((char*)args->value, length, "decode utf8-encode unicode string");
         } else {
             data = Py_BuildValue("s#", (char*)args->value, length);
         }

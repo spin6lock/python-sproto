@@ -13,3 +13,7 @@
     g 6 : *boolean
     h 7 : *foobar
 }
+
+.Person {
+    name 0: string
+}
