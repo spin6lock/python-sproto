@@ -213,7 +213,7 @@ decode(const struct sproto_arg *args) {
 	}
 	case SPROTO_TSTRING: {
         if (args->extra == SPROTO_TSTRING_STRING) {
-            data = Py_BuildValue("u#", (char*)args->value, length);
+            data = Py_BuildValue("u#", (Py_UNICODE *)args->value, length);
         } else {
             data = Py_BuildValue("s#", (char*)args->value, length);
         }
