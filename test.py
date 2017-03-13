@@ -6,7 +6,7 @@ import unittest
 
 class TestPySproto(unittest.TestCase):
     def get_st_sp(self):
-        with open("person.pb", "r") as fh:
+        with open("person.spb", "r") as fh:
             content = fh.read()
             sp = sproto_create(content)
             st = sproto_type(sp, "Person")
