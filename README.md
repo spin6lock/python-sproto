@@ -1,5 +1,11 @@
 [![Build Status](https://travis-ci.org/spin6lock/python-sproto.svg?branch=master)](https://travis-ci.org/spin6lock/python-sproto)
 
+What's new:
+===========
+20170313
+* Add fixed-point number support
+* Add unicode string support, any field with declare string must be unicode, and it will send out with utf-8 encoded. If you encoded string yourself, then use binary instead
+
 IMPORTANT:
 ==========
 The sproto_decode api has changed recently, so you may need to change the code to accept ret value. Sorry for the inconvenient.
