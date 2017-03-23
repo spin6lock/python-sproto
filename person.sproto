@@ -9,6 +9,7 @@
 	}
 
 	phone 3 : *PhoneNumber
+	pi    4 : integer(5)
 }
 
 .AddressBook {

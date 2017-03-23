@@ -212,6 +212,18 @@ class TestPySproto(unittest.TestCase):
             })
         decode_result, r = sproto_decode(st, msg)
         self.assertEqual(decode_result['name'], origin_str)
-
+    
+    def test_fixed_point(self):
+        with open("person.spb", "r") as fh:
+            content = fh.read()
+        sp = sproto_create(content)
+        st = sproto_type(sp, "Person")
+        number = 3.1415
+        msg = sproto_encode(st, {
+            'pi' : number,
+            })
+        decode_result, r = sproto_decode(st, msg)
+        self.assertEqual(decode_result['pi'], number)
+ 
 if __name__ == "__main__":
     unittest.main()

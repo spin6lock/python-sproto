@@ -67,11 +67,12 @@ encode(const struct sproto_arg *args) {
     //self->tagname = tagname;
     switch(type) {
         case SPROTO_TINTEGER: {
-            if (PyInt_Check(data) || PyLong_Check(data)) {
+            if (PyInt_Check(data) || PyLong_Check(data) || ((args->extra) && PyFloat_Check(data))) {
                 long long raw = PyLong_AsLongLong(data);
                 long long i;
                 if (args->extra) {
-                    i = raw * args->extra + 0.5;
+                    i = PyFloat_AsDouble(data) * args->extra + 0.5;
+                    //printf("input data:%lld\n", i);
                 } else {
                     i = raw;
                 }
@@ -206,9 +207,11 @@ decode(const struct sproto_arg *args) {
     case SPROTO_TINTEGER: {
         long long i = (long long)args->value;
         if (args->extra) {
-            i /= args->extra;
-        }
-        if (length == 4) {
+            int64_t tmp = *(int64_t*)i;
+            double result = (double)tmp / args->extra;
+            data = Py_BuildValue("d", result);
+            break;
+        } else if (length == 4) {
             data = Py_BuildValue("i", *(int32_t*)i);
             break;
         } else if (length == 8) {
