@@ -27,6 +27,10 @@ encode(const struct sproto_arg *args) {
     PyObject *data = NULL;
     data = PyDict_GetItemString(self->table, tagname);
     if (data == NULL ) {
+        if (args->required == SPROTO_REQUIRED) { 
+            PyErr_SetObject(SprotoError, PyString_FromFormat("%s is required", tagname));
+            return SPROTO_CB_ERROR;
+        }
         if (index > 0) {
             //printf("%s\t no array\n", tagname);
             return SPROTO_CB_NOARRAY;
@@ -64,7 +68,6 @@ encode(const struct sproto_arg *args) {
             data = PyList_GetItem(data, index - 1);
         }
     }
-    //self->tagname = tagname;
     switch(type) {
         case SPROTO_TINTEGER: {
             if (PyInt_Check(data) || PyLong_Check(data) || ((args->extra) && PyFloat_Check(data))) {
@@ -75,6 +78,9 @@ encode(const struct sproto_arg *args) {
                     //printf("input data:%lld\n", i);
                 } else {
                     i = raw;
+                }
+                if (i == 0 && args->required == SPROTO_OPTIONAL) {
+                    return SPROTO_CB_NIL;
                 }
                 long long vh = i >> 31; 
                 if (vh == 0 || vh == -1) {
@@ -116,6 +122,9 @@ encode(const struct sproto_arg *args) {
                 }
                 tmp_str = PyUnicode_AsUTF8String(data);
                 PyString_AsStringAndSize(tmp_str, &string_ptr, &len);
+            }
+            if (len == 0 && args->required == SPROTO_OPTIONAL) {
+                return SPROTO_CB_NIL;
             }
             if (len > length) {
                 return SPROTO_CB_ERROR;
@@ -186,6 +195,29 @@ decode(const struct sproto_arg *args) {
     //printf("table pointer: %p\n", (void*)self->table);
     PyObject *obj = self->table;
     PyObject *data = NULL;
+    if (args->value == NULL) {
+        if (args->required == SPROTO_REQUIRED) {
+            PyErr_SetString(SprotoError, "%s is missing\n", args->tagname);
+            return SPROTO_CB_ERROR;
+        } else {    //args is optional
+            if (args->index < 0) {
+                //push empty table
+            } else {
+                switch (args->type) {
+                    case SPROTO_TINTEGER:
+                        //push 0
+                        break;
+                    case SPROTO_TBOOLEAN:
+                        break;
+                    case SPROTO_TSTRING:
+                        break;
+                    default:
+                        return 0;
+                }
+            }
+            return 0;
+        }
+    }
     if (index != 0) {
         obj = PyDict_GetItemString(self->table, tagname);
         if (obj == NULL) {
