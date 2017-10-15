@@ -21,7 +21,7 @@ Example:
   with open('your.spb', 'r') as fh:
     content = fh.read()
   sproto_obj = SprotoRpc(content, content, base_package) #base_package is your package struct name
-  p = sproto_obj.encode('client.hello', {'foo':'bar'})
+  p = sproto_obj.request('client.hello', {'foo':'bar'})
   sock.send(p)
 ```
 
