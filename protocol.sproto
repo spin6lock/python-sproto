@@ -23,3 +23,15 @@ bar 3 {}
 blackhole 4 {
 	request {}
 }
+
+.heroinfo {
+    id 0 : integer
+    lv 1 : integer
+    cfgid 2 : integer
+}
+
+synheroinfos 5  {
+    request {
+        herolist 0 : *heroinfo(id)
+    }
+}

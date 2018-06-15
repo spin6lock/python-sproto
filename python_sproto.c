@@ -182,14 +182,14 @@ decode(const struct sproto_arg *args) {
     int index = args->index;
     int mainindex = args->mainindex;
     int length = args->length;
-    //printf("tagname:%s, type:%d, index:%d, length:%d\n", tagname, type, index, length);
+    //printf("tagname:%s, type:%d, index:%d, length:%d, mainindex:%d\n", tagname, type, index, length, mainindex);
     //printf("table pointer: %p\n", (void*)self->table);
     PyObject *obj = self->table;
     PyObject *data = NULL;
     if (index != 0) {
         obj = PyDict_GetItemString(self->table, tagname);
         if (obj == NULL) {
-            if (mainindex > 0) {
+            if (mainindex >= 0) {
                 PyObject *dict = PyDict_New();
                 obj = dict;
             } else {
@@ -249,7 +249,7 @@ decode(const struct sproto_arg *args) {
             if (r != length) {
                 return r;
             }
-            //printf("%s\n", PyString_AsString(PyObject_Str(sub.table)));
+            //printf("%s:%s\n", PyString_AsString(PyObject_Str(sub.map_key)), PyString_AsString(PyObject_Str(sub.table)));
             PyDict_SetItem(obj, sub.map_key, sub.table);
         } else {
             sub.mainindex = -1;

@@ -225,5 +225,29 @@ class TestPySproto(unittest.TestCase):
         decode_result, r = sproto_decode(st, msg)
         self.assertEqual(decode_result['pi'], number)
  
+    def test_map_key_is_first_one(self):
+        with open("protocol.spb", "r") as fh:
+            content = fh.read()
+        sp = sproto_create(content)
+        tag, req, resp = sproto_protocol(sp, "synheroinfos")
+        source = {
+                "herolist" : {
+                    1: {
+                        "id" : 1,
+                        "lv" : 2,
+                        "cfgid" : 3,
+                    },
+                    2: {
+                        "id" : 2,
+                        "lv" : 2,
+                        "cfgid" : 4,
+                    },
+                }
+        }
+        msg = sproto_encode(req, source)
+        dest, r = sproto_decode(req, msg)
+        self.assertEqual(dest, source)
+        self.assertEqual(r, len(msg))
+
 if __name__ == "__main__":
     unittest.main()
