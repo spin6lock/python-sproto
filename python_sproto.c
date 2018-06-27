@@ -215,7 +215,7 @@ decode(const struct sproto_arg *args) {
             data = Py_BuildValue("i", *(int32_t*)i);
             break;
         } else if (length == 8) {
-            data = Py_BuildValue("l", *(int64_t*)i);
+            data = Py_BuildValue("L", *(int64_t*)i);
             break;
         } else {
             PyErr_SetString(SprotoError, "unexpected integer length");
