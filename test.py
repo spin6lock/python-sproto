@@ -6,7 +6,7 @@ import unittest
 
 class TestPySproto(unittest.TestCase):
     def get_st_sp(self):
-        with open("person.spb", "r") as fh:
+        with open("person.spb", "rb") as fh:
             content = fh.read()
             sp = sproto_create(content)
             st = sproto_type(sp, "Person")
@@ -86,17 +86,17 @@ class TestPySproto(unittest.TestCase):
                 "name":"t",
                 "id":"fake_id",
             })
-        self.assertEqual(se.exception.message, "type mismatch, tag:id, expected int or long")
+        self.assertEqual(str(se.exception), "type mismatch, tag:id, expected int or long")
 
     def test_sproto_protocal_refcount(self):
-        with open("protocol.spb", "r") as fh:
+        with open("protocol.spb", "rb") as fh:
             content = fh.read()
         sp = sproto_create(content)
         proto = sproto_protocol(sp, "foobar")
         self.assertEqual(getrefcount(proto[1])-1, 1)
 
     def test_sproto_protocal(self):
-        with open("protocol.spb", "r") as fh:
+        with open("protocol.spb", "rb") as fh:
             content = fh.read()
         sp = sproto_create(content)
         tag, req, resp = sproto_protocol(sp, "foo")
@@ -104,7 +104,7 @@ class TestPySproto(unittest.TestCase):
         self.assertNotEqual(resp, None)
 
     def test_complex_encode_decode(self):
-        with open("testall.spb", "r") as fh:
+        with open("testall.spb", "rb") as fh:
             content = fh.read()
         sp = sproto_create(content)
         st = sproto_type(sp, "foobar")
@@ -146,7 +146,7 @@ class TestPySproto(unittest.TestCase):
         self.assertEqual(r, len(msg))
 
     def test_long_string_encode(self):
-        with open("testall.spb", "r") as fh:
+        with open("testall.spb", "rb") as fh:
             content = fh.read()
         sp = sproto_create(content)
         st = sproto_type(sp, "foobar")
@@ -158,18 +158,18 @@ class TestPySproto(unittest.TestCase):
         self.assertEqual(decode_result["a"], origin_str)
 
     def test_sproto_dump(self):
-        with open("testall.spb", "r") as fh:
+        with open("testall.spb", "rb") as fh:
             content = fh.read()
         sp = sproto_create(content)
         sproto_dump(sp)
 
     def test_sproto_name(self):
         st, _ = self.get_st_sp()
-        print sproto_name(st)
+        print(sproto_name(st))
 
     #https://github.com/spin6lock/python-sproto/issues/7
     def test_long_long_cutoff(self):
-        with open("testall.spb", "r") as fh:
+        with open("testall.spb", "rb") as fh:
             content = fh.read()
         sp = sproto_create(content)
         st = sproto_type(sp, "foobar")
@@ -181,7 +181,7 @@ class TestPySproto(unittest.TestCase):
         self.assertEqual(decode_result["b"], b)
 
     def test_empty_table(self):
-        with open("testall.spb", "r") as fh:
+        with open("testall.spb", "rb") as fh:
             content = fh.read()
         sp = sproto_create(content)
         st = sproto_type(sp, "foobar")
@@ -202,7 +202,7 @@ class TestPySproto(unittest.TestCase):
         self.assertEqual(r, len(msg))
 
     def test_unicode_string(self):
-        with open("testall.spb", "r") as fh:
+        with open("testall.spb", "rb") as fh:
             content = fh.read()
         sp = sproto_create(content)
         st = sproto_type(sp, "Person")
@@ -214,7 +214,7 @@ class TestPySproto(unittest.TestCase):
         self.assertEqual(decode_result['name'], origin_str)
     
     def test_fixed_point(self):
-        with open("person.spb", "r") as fh:
+        with open("person.spb", "rb") as fh:
             content = fh.read()
         sp = sproto_create(content)
         st = sproto_type(sp, "Person")
@@ -226,7 +226,7 @@ class TestPySproto(unittest.TestCase):
         self.assertEqual(decode_result['pi'], number)
  
     def test_map_key_is_first_one(self):
-        with open("protocol.spb", "r") as fh:
+        with open("protocol.spb", "rb") as fh:
             content = fh.read()
         sp = sproto_create(content)
         tag, req, resp = sproto_protocol(sp, "synheroinfos")

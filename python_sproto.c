@@ -1,6 +1,7 @@
-#include <Python.h>
+#include </usr/include/python3.6m/Python.h>
 #include "sproto.h"
-
+#include <string.h>
+#include <stdio.h>
 #ifdef _WIN32
 #include "msvcint.h"
 #endif
@@ -15,6 +16,19 @@ struct encode_ud {
     PyObject *table;
     PyObject *values;
 };
+
+void
+mysetstring(PyObject *tmp, char *str) {
+	printf("set string:%s\n", str);
+	//PyErr_SetString(SprotoError, str);
+	PyErr_SetString(SprotoError, str);
+}
+
+void
+mysetobject(PyObject *tmp, PyObject *unicode_str) {
+	PyObject_Print(unicode_str, stdout, Py_PRINT_RAW);
+	PyErr_SetObject(SprotoError, unicode_str);
+}
 
 static int
 encode(const struct sproto_arg *args) {
@@ -52,7 +66,8 @@ encode(const struct sproto_arg *args) {
                     return SPROTO_CB_NIL; //data is finish
                 }
             } else {
-                PyErr_SetObject(SprotoError, PyString_FromFormat("Expected List or Dict for tagname:%s", tagname));
+                // py2 PyString_FromFormat py3 PyUnicode_FromFormat
+                mysetobject(SprotoError, PyUnicode_FromFormat("Expected List or Dict for tagname:%s", tagname));
                 return SPROTO_CB_ERROR;
             }
         } else {
@@ -67,7 +82,8 @@ encode(const struct sproto_arg *args) {
     //self->tagname = tagname;
     switch(type) {
         case SPROTO_TINTEGER: {
-            if (PyInt_Check(data) || PyLong_Check(data) || ((args->extra) && PyFloat_Check(data))) {
+            //if (PyInt_Check(data) || PyLong_Check(data) || ((args->extra) && PyFloat_Check(data))) { //py2
+            if (PyLong_Check(data) || ((args->extra) && PyFloat_Check(data))) { //py2
                 long long raw = PyLong_AsLongLong(data);
                 long long i;
                 if (args->extra) {
@@ -85,7 +101,8 @@ encode(const struct sproto_arg *args) {
                     return 8; 
                 }
             } else {
-                PyErr_SetObject(SprotoError, PyString_FromFormat("type mismatch, tag:%s, expected int or long", tagname));
+                // py2 PyString_FromFormat py3 PyUnicode_FromFormat
+                mysetobject(SprotoError, PyUnicode_FromFormat("type mismatch, tag:%s, expected int or long", tagname));
                 return -1;
             }
         }
@@ -99,23 +116,29 @@ encode(const struct sproto_arg *args) {
             return 4;
         }
         case SPROTO_TSTRING: {
-            //printf("PyString Check:%s\n", PyString_Check(data)?"true":"false");
+            printf("PyString Check:%s\n", PyBytes_Check(data)?"true":"false");
             Py_ssize_t len = 0;
             char* string_ptr = NULL;
             PyObject *tmp_str = NULL;
             if (args->extra == SPROTO_TSTRING_BINARY) { //binary string
-                if (!PyString_Check(data)) {
-                    PyErr_SetObject(SprotoError, PyString_FromFormat("type mismatch, tag:%s, expected string", tagname));
+                //printf("sproto tstring binary:%d, bytes_check:%d\n", PyUnicode_Check(data), PyBytes_Check(data));
+                // py2 PyString_Check  py3 PyBytes_Check
+                if (!PyUnicode_Check(data)) {
+                    // py2 PyString_FromFormat py3 PyUnicode_FromFormat
+                    mysetobject(SprotoError, PyUnicode_FromFormat("type mismatch, tag:%s, expected string", tagname));
                     return SPROTO_CB_ERROR;
                 }
-                PyString_AsStringAndSize(data, &string_ptr, &len);
+                // py2 PyString_AsStringAndSize py3 PyBytes_AsStringAndSize
+                string_ptr = PyUnicode_AsUTF8AndSize(data, &len);
             } else {    //unicode string
                 if (!PyUnicode_Check(data)) {
-                    PyErr_SetObject(SprotoError, PyString_FromFormat("type mismatch, tag:%s, expected unicode", tagname));
+                    // py2 PyString_FromFormat py3 PyUnicode_FromFormat
+                    mysetobject(SprotoError, PyUnicode_FromFormat("type mismatch, tag:%s, expected unicode", tagname));
                     return SPROTO_CB_ERROR;
                 }
                 tmp_str = PyUnicode_AsUTF8String(data);
-                PyString_AsStringAndSize(tmp_str, &string_ptr, &len);
+                // py2 PyString_AsStringAndSize py3 PyBytes_AsStringAndSize
+                PyBytes_AsStringAndSize(tmp_str, &string_ptr, &len);
             }
             if (len > length) {
                 return SPROTO_CB_ERROR;
@@ -129,7 +152,7 @@ encode(const struct sproto_arg *args) {
         case SPROTO_TSTRUCT: {
             struct encode_ud sub;
             sub.table = data;
-            //printf("encode SPROTO_TSTRUCT\n");
+            printf("encode SPROTO_TSTRUCT\n");
             int r = sproto_encode(args->subtype, args->value, length, encode, &sub);
             if (r < 0) {
                 //printf("sproto cb error\n");
@@ -218,7 +241,7 @@ decode(const struct sproto_arg *args) {
             data = Py_BuildValue("L", *(int64_t*)i);
             break;
         } else {
-            PyErr_SetString(SprotoError, "unexpected integer length");
+            mysetstring(SprotoError, "unexpected integer length");
             return SPROTO_CB_ERROR;
         }
 	}
@@ -249,7 +272,7 @@ decode(const struct sproto_arg *args) {
             if (r != length) {
                 return r;
             }
-            //printf("%s:%s\n", PyString_AsString(PyObject_Str(sub.map_key)), PyString_AsString(PyObject_Str(sub.table)));
+            // printf("%s:%s\n", PyString_AsString(PyObject_Str(sub.map_key)), PyString_AsString(PyObject_Str(sub.table)));
             PyDict_SetItem(obj, sub.map_key, sub.table);
         } else {
             sub.mainindex = -1;
@@ -280,7 +303,7 @@ decode(const struct sproto_arg *args) {
         } 
     } else {
         if (self->mainindex == tagid) {
-            PyErr_SetString(SprotoError, "map key type not support");
+            mysetstring(SprotoError, "map key type not support");
             return SPROTO_CB_ERROR;
         }
     }
@@ -334,7 +357,7 @@ py_sproto_encode(PyObject *pymodule, PyObject *args) {
             buffer = PyMem_Realloc(buffer, sz * 2);
             sz = sz * 2;
         } else {
-            PyObject *t = Py_BuildValue("s#", buffer, r);
+            PyObject *t = Py_BuildValue("y#", buffer, r);
             PyMem_Free(buffer);
             return t;
         }
@@ -357,7 +380,7 @@ py_sproto_decode(PyObject *pymodule, PyObject *args) {
     int r = sproto_decode(sprototype, buffer, sz, decode, &self);
     if (r < 0) {
         Py_XDECREF(self.table);
-        PyErr_SetString(SprotoError, "sproto c lib error");
+        mysetstring(SprotoError, "sproto c lib error");
         return NULL;
     }
     //printf("table size:%d\n", PyDict_Size(self.table));
@@ -369,7 +392,8 @@ static PyObject*
 py_sproto_pack(PyObject *pymodule, PyObject *args) {
     char *srcbuffer;
     int srcsz;
-    if (!PyArg_ParseTuple(args, "s#", &srcbuffer, &srcsz)) {
+    if (!PyArg_ParseTuple(args, "y#", &srcbuffer, &srcsz)) {
+        printf("py_sproto_pack args check fail\n");
         return NULL;
     }
     int maxsz = (srcsz + 2047) / 2048 * 2 + srcsz + 2;
@@ -378,7 +402,7 @@ py_sproto_pack(PyObject *pymodule, PyObject *args) {
     if (bytes > maxsz) {
         return Py_None;
     }
-    PyObject *t = Py_BuildValue("s#", dstbuffer, bytes);
+    PyObject *t = Py_BuildValue("y#", dstbuffer, bytes);
     PyMem_Free(dstbuffer);
     return t; 
 }
@@ -387,7 +411,7 @@ static PyObject*
 py_sproto_unpack(PyObject *pymodule, PyObject *args) {
     char *srcbuffer;
     int srcsz;
-    if (!PyArg_ParseTuple(args, "s#", &srcbuffer, &srcsz)) {
+    if (!PyArg_ParseTuple(args, "y#", &srcbuffer, &srcsz)) {
         return NULL;
     }
     int dstsz = 1024;
@@ -401,7 +425,8 @@ py_sproto_unpack(PyObject *pymodule, PyObject *args) {
         void *new_ptr = PyMem_Realloc(dstbuffer, r);
         if (new_ptr == NULL) {
             PyMem_Free(dstbuffer);
-            PyErr_SetObject(SprotoError, PyString_FromFormat("out of memory"));
+            // py2 PyString_FromFormat py3 PyUnicode_FromFormat
+            mysetobject(SprotoError, PyUnicode_FromFormat("out of memory"));
             return Py_None;
         }
         dstbuffer = new_ptr;
@@ -412,7 +437,7 @@ py_sproto_unpack(PyObject *pymodule, PyObject *args) {
         PyMem_Free(dstbuffer);
         return Py_None;
     }
-    PyObject *t = Py_BuildValue("s#", dstbuffer, dstsz);
+    PyObject *t = Py_BuildValue("y#", dstbuffer, dstsz);
     PyMem_Free(dstbuffer);
     return t;
 }
@@ -428,15 +453,21 @@ py_sproto_protocol(PyObject *pymodule, PyObject *args) {
     int tagid;
     const char *name;
     PyObject *ret;
-    if (PyInt_Check(name_or_tagid)) {
-        tagid = PyInt_AsLong(name_or_tagid);
+    //if (PyInt_Check(name_or_tagid)) { //py2
+    if (PyLong_Check(name_or_tagid)) //py3
+    {
+        // tagid = PyInt_AsLong(name_or_tagid); //py2
+        tagid = PyLong_AsLong(name_or_tagid); //py3
         if (PyErr_Occurred()) {
             return NULL;
         }
         name = sproto_protoname(sp, tagid);
         ret = Py_BuildValue("s", name);
-    } else {
-        name = PyString_AsString(name_or_tagid);
+    } 
+    else 
+    {
+        name = PyUnicode_AsUTF8(name_or_tagid);
+        //name = PyString_AsString(name_or_tagid); //py2
         tagid = sproto_prototag(sp, name);
         ret = Py_BuildValue("i", tagid);
     }
@@ -490,15 +521,28 @@ static PyMethodDef pysproto_methods[] = {
     {NULL, NULL}
 };
 
-PyMODINIT_FUNC
-initpysproto(void){
-    PyObject *m;
-    m = Py_InitModule("pysproto", pysproto_methods);
-    if (m == NULL) {
-        return;
-    }
+//py3 ？
+static struct PyModuleDef module = {
+    PyModuleDef_HEAD_INIT,
+    "pysproto",
+    "docstring for the module",
+    -1,
+    pysproto_methods
+};
+
+//py2
+// PyMODINIT_FUNC
+// initpysproto(void){
+//py3 
+PyMODINIT_FUNC 
+PyInit_pysproto() {    
     SprotoError = PyErr_NewException("pysproto.error", NULL, NULL);
     Py_INCREF(SprotoError);
+    PyObject *m = PyModule_Create(&module);
+    if (m == NULL) {
+        printf("module create failed\n");
+        return NULL;
+    }
     PyModule_AddObject(m, "error", SprotoError);
+    return m;
 }
-
