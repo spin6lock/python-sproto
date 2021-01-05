@@ -116,7 +116,7 @@ encode(const struct sproto_arg *args) {
             return 4;
         }
         case SPROTO_TSTRING: {
-            printf("PyString Check:%s\n", PyBytes_Check(data)?"true":"false");
+            //printf("PyString Check:%s\n", PyBytes_Check(data)?"true":"false");
             Py_ssize_t len = 0;
             char* string_ptr = NULL;
             PyObject *tmp_str = NULL;
@@ -152,7 +152,7 @@ encode(const struct sproto_arg *args) {
         case SPROTO_TSTRUCT: {
             struct encode_ud sub;
             sub.table = data;
-            printf("encode SPROTO_TSTRUCT\n");
+            //printf("encode SPROTO_TSTRUCT\n");
             int r = sproto_encode(args->subtype, args->value, length, encode, &sub);
             if (r < 0) {
                 //printf("sproto cb error\n");
