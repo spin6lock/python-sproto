@@ -10,6 +10,7 @@ typedef int bool;
 #define true 1
 #define false 0
 
+#define GET_TYPE_NAME(obj) (Py_TYPE(obj)->tp_name)
 static PyObject *SprotoError;
 
 struct encode_ud {
@@ -102,7 +103,7 @@ encode(const struct sproto_arg *args) {
                 }
             } else {
                 // py2 PyString_FromFormat py3 PyUnicode_FromFormat
-                mysetobject(SprotoError, PyUnicode_FromFormat("type mismatch, tag:%s, expected int or long", tagname));
+                mysetobject(SprotoError, PyUnicode_FromFormat("type mismatch, tag:%s, expected int or long, got:%s\n", tagname, GET_TYPE_NAME(data)));
                 return -1;
             }
         }
@@ -123,22 +124,20 @@ encode(const struct sproto_arg *args) {
             if (args->extra == SPROTO_TSTRING_BINARY) { //binary string
                 //printf("sproto tstring binary:%d, bytes_check:%d\n", PyUnicode_Check(data), PyBytes_Check(data));
                 // py2 PyString_Check  py3 PyBytes_Check
+                if (!PyBytes_Check(data)) {
+                    // py2 PyString_FromFormat py3 PyUnicode_FromFormat
+                    mysetobject(SprotoError, PyUnicode_FromFormat("type mismatch, tag:%s, expected bytes, got:%s\n", tagname, GET_TYPE_NAME(data)));
+                    return SPROTO_CB_ERROR;
+                }
+                PyBytes_AsStringAndSize(data, &string_ptr, &len);
+            } else {    //unicode string
                 if (!PyUnicode_Check(data)) {
                     // py2 PyString_FromFormat py3 PyUnicode_FromFormat
-                    mysetobject(SprotoError, PyUnicode_FromFormat("type mismatch, tag:%s, expected string", tagname));
+                    mysetobject(SprotoError, PyUnicode_FromFormat("type mismatch, tag:%s, expected unicode, got:%s\n", tagname, GET_TYPE_NAME(data)));
                     return SPROTO_CB_ERROR;
                 }
                 // py2 PyString_AsStringAndSize py3 PyBytes_AsStringAndSize
                 string_ptr = PyUnicode_AsUTF8AndSize(data, &len);
-            } else {    //unicode string
-                if (!PyUnicode_Check(data)) {
-                    // py2 PyString_FromFormat py3 PyUnicode_FromFormat
-                    mysetobject(SprotoError, PyUnicode_FromFormat("type mismatch, tag:%s, expected unicode", tagname));
-                    return SPROTO_CB_ERROR;
-                }
-                tmp_str = PyUnicode_AsUTF8String(data);
-                // py2 PyString_AsStringAndSize py3 PyBytes_AsStringAndSize
-                PyBytes_AsStringAndSize(tmp_str, &string_ptr, &len);
             }
             if (len > length) {
                 return SPROTO_CB_ERROR;
@@ -253,7 +252,7 @@ decode(const struct sproto_arg *args) {
         if (args->extra == SPROTO_TSTRING_STRING) {
             data = PyUnicode_DecodeUTF8((char*)args->value, length, "decode utf8-encode unicode string");
         } else {
-            data = Py_BuildValue("s#", (char*)args->value, length);
+            data = Py_BuildValue("y#", (char*)args->value, length);
         }
 		break;
 	}

@@ -12,17 +12,17 @@ def get_st(content, tag):
 gc.collect()
 st = get_st(content, "Person")
 result = sproto_encode(st, {
-    "name": "crystal",
+    "name": b"crystal",
     "id":1001,
-    "email":"crystal@example.com",
+    "email":b"crystal@example.com",
     "phone":[
         {
             "type" : 1,
-            "number": "10086",
+            "number": b"10086",
         },
         {
             "type" : 2,
-            "number":"10010",
+            "number": b"10010",
         },
     ],
     })
