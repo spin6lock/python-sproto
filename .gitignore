@@ -1,0 +1,4 @@
+MANIFEST
+build/*
+dist/*
+src/pysproto.egg-info/
