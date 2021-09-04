@@ -16,7 +16,8 @@ clean:
 	rm -f core
 
 sdist:
+	rm dist/*
 	python3 setup.py sdist
 
 publish:
-	twine upload dist/*
+	twine upload dist/*.tar.gz

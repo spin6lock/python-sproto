@@ -1,7 +1,7 @@
-#include </usr/include/python3.6m/Python.h>
+#define PY_SSIZE_T_CLEAN
+
+#include <Python.h>
 #include "sproto.h"
-#include <string.h>
-#include <stdio.h>
 #ifdef _WIN32
 #include "msvcint.h"
 #endif
@@ -9,6 +9,7 @@
 typedef int bool;
 #define true 1
 #define false 0
+
 
 #define GET_TYPE_NAME(obj) (Py_TYPE(obj)->tp_name)
 static PyObject *SprotoError;
@@ -176,7 +177,7 @@ sproto_free(PyObject *ptr) {
 static PyObject*
 py_sproto_create(PyObject *self, PyObject *args) {
     char *buffer;
-    int sz = 0;
+    Py_ssize_t sz = 0;
     struct sproto *sp;
     if (!PyArg_ParseTuple(args, "s#", &buffer, &sz)) {
         return NULL;
@@ -203,7 +204,7 @@ decode(const struct sproto_arg *args) {
     int type = args->type;
     int index = args->index;
     int mainindex = args->mainindex;
-    int length = args->length;
+    Py_ssize_t length = args->length;
     //printf("tagname:%s, type:%d, index:%d, length:%d, mainindex:%d\n", tagname, type, index, length, mainindex);
     //printf("table pointer: %p\n", (void*)self->table);
     PyObject *obj = self->table;
@@ -347,7 +348,7 @@ py_sproto_encode(PyObject *pymodule, PyObject *args) {
     struct encode_ud self;
     self.table = table;
     for (;;) {
-        int r = sproto_encode(sprototype, buffer, sz, encode, &self);
+        Py_ssize_t r = sproto_encode(sprototype, buffer, sz, encode, &self);
         if (r < 0) {
             if (PyErr_Occurred()) {
                 PyMem_Free(buffer);
@@ -367,7 +368,7 @@ static PyObject*
 py_sproto_decode(PyObject *pymodule, PyObject *args) {
     PyObject *st_capsule;
     char *buffer;
-    int sz = 0;
+    Py_ssize_t sz = 0;
     struct sproto_type *sprototype;
     struct decode_ud self;
     if (!PyArg_ParseTuple(args, "Os#", &st_capsule, &buffer, &sz)) {
@@ -390,14 +391,14 @@ py_sproto_decode(PyObject *pymodule, PyObject *args) {
 static PyObject*
 py_sproto_pack(PyObject *pymodule, PyObject *args) {
     char *srcbuffer;
-    int srcsz;
+    Py_ssize_t srcsz;
     if (!PyArg_ParseTuple(args, "y#", &srcbuffer, &srcsz)) {
         printf("py_sproto_pack args check fail\n");
         return NULL;
     }
     int maxsz = (srcsz + 2047) / 2048 * 2 + srcsz + 2;
     void *dstbuffer = PyMem_Malloc(maxsz);
-    int bytes = sproto_pack(srcbuffer, srcsz, dstbuffer, maxsz);
+    Py_ssize_t bytes = sproto_pack(srcbuffer, srcsz, dstbuffer, maxsz);
     if (bytes > maxsz) {
         return Py_None;
     }
@@ -409,11 +410,11 @@ py_sproto_pack(PyObject *pymodule, PyObject *args) {
 static PyObject*
 py_sproto_unpack(PyObject *pymodule, PyObject *args) {
     char *srcbuffer;
-    int srcsz;
+    Py_ssize_t srcsz;
     if (!PyArg_ParseTuple(args, "y#", &srcbuffer, &srcsz)) {
         return NULL;
     }
-    int dstsz = 1024;
+    Py_ssize_t dstsz = 1024;
     void *dstbuffer = PyMem_Malloc(dstsz);
     int r = sproto_unpack(srcbuffer, srcsz, dstbuffer, dstsz);
     if (r < 0) {
