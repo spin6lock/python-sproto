@@ -2,6 +2,9 @@
 
 What's new:
 ===========
+20210904
+* upload to pypi finally, you can install Python3 version by `pip3 install pysproto`
+
 20170313
 * Add fixed-point number support
 * Add unicode string support, any field with declare string must be unicode, and it will send out with utf-8 encoded. If you encoded string yourself, then use binary instead
