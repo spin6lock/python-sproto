@@ -16,7 +16,7 @@ clean:
 	rm -f core
 
 sdist:
-	rm dist/*
+	rm -f dist/*
 	python3 setup.py sdist
 
 publish:
