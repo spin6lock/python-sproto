@@ -2,6 +2,7 @@ MANIFEST
 build/*
 dist/*
 src/pysproto.egg-info/
+**/__pycache__
 test/*.so
 *.sw?
 *.so
