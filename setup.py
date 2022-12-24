@@ -8,7 +8,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
         long_description = fh.read()
 
 setup(name = "pysproto",
-        version = '0.1.2',
+        version = '0.1.4',
         description = "python binding to sproto, a serialize library",
         long_description = "Documentation and bug report: http://github.com/spin6lock/python-sproto",
         author = "spin6lock",

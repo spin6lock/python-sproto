@@ -1,1 +1,2 @@
 graft src/pysproto/
+graft src/pysproto_rpc/
