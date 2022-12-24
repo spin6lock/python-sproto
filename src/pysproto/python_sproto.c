@@ -39,7 +39,7 @@ encode(const struct sproto_arg *args) {
     int type = args->type;
     int index = args->index;
     int length = args->length;
-    //printf("tagname:%s, type:%d, index:%d, length:%d, mainindex:%d, subtype:%d\n", tagname, type, index, length, mainindex, args->subtype);
+    //printf("tagname:%s, type:%d, index:%d, length:%d, subtype:%d\n", tagname, type, index, length, args->subtype);
     PyObject *data = NULL;
     data = PyDict_GetItemString(self->table, tagname);
     if (data == NULL ) {
@@ -86,13 +86,12 @@ encode(const struct sproto_arg *args) {
         case SPROTO_TINTEGER: {
             //if (PyInt_Check(data) || PyLong_Check(data) || ((args->extra) && PyFloat_Check(data))) { //py2
             if (PyLong_Check(data) || ((args->extra) && PyFloat_Check(data))) { //py2
-                long long raw = PyLong_AsLongLong(data);
                 long long i;
                 if (args->extra) {
                     i = PyFloat_AsDouble(data) * args->extra + 0.5;
                     //printf("input data:%lld\n", i);
                 } else {
-                    i = raw;
+                    i = PyLong_AsLongLong(data);
                 }
                 long long vh = i >> 31; 
                 if (vh == 0 || vh == -1) {
