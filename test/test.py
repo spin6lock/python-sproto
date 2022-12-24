@@ -226,7 +226,7 @@ class TestPySproto(unittest.TestCase):
             })
         decode_result, r = sproto_decode(st, msg)
         self.assertEqual(decode_result['pi'], number)
- 
+
     def test_map_key_is_first_one(self):
         with open("protocol.spb", "rb") as fh:
             content = fh.read()

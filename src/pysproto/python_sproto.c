@@ -119,7 +119,7 @@ encode(const struct sproto_arg *args) {
         case SPROTO_TSTRING: {
             //printf("PyString Check:%s\n", PyBytes_Check(data)?"true":"false");
             Py_ssize_t len = 0;
-            char* string_ptr = NULL;
+            const char* string_ptr = NULL;
             PyObject *tmp_str = NULL;
             if (args->extra == SPROTO_TSTRING_BINARY) { //binary string
                 //printf("sproto tstring binary:%d, bytes_check:%d\n", PyUnicode_Check(data), PyBytes_Check(data));
@@ -129,7 +129,7 @@ encode(const struct sproto_arg *args) {
                     mysetobject(SprotoError, PyUnicode_FromFormat("type mismatch, tag:%s, expected bytes, got:%s\n", tagname, GET_TYPE_NAME(data)));
                     return SPROTO_CB_ERROR;
                 }
-                PyBytes_AsStringAndSize(data, &string_ptr, &len);
+                PyBytes_AsStringAndSize(data, (char**)&string_ptr, &len);
             } else {    //unicode string
                 if (!PyUnicode_Check(data)) {
                     // py2 PyString_FromFormat py3 PyUnicode_FromFormat

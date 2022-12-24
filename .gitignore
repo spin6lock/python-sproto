@@ -4,3 +4,4 @@ dist/*
 src/pysproto.egg-info/
 test/*.so
 *.sw?
+*.so

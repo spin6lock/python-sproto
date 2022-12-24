@@ -14,6 +14,9 @@ class Sproto(object):
     def protocol(self, protoname):
         if not protoname in self.proto:
             self.proto[protoname] = core.sproto_protocol(self.sp, protoname)
+        tag, req, resp = self.proto[protoname]
+        if tag == -1:
+            raise ValueError("protoname not exist:", protoname)
         return self.proto[protoname]
 
     def encode(self, st, data):
