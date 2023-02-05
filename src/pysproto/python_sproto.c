@@ -288,6 +288,10 @@ decode(const struct sproto_arg *args) {
             break;
         }
 	}
+    default: {
+            mysetobject(SprotoError, PyUnicode_FromFormat("unexpected type: %s", type));
+            return SPROTO_CB_ERROR;
+        }
     }
     if (data != NULL) {
         if (PyList_Check(obj)) {
