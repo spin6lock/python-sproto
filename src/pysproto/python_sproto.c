@@ -524,7 +524,6 @@ static PyMethodDef pysproto_methods[] = {
     {NULL, NULL}
 };
 
-//py3 ？
 static struct PyModuleDef module = {
     PyModuleDef_HEAD_INIT,
     "pysproto",
