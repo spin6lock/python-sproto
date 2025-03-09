@@ -137,6 +137,7 @@ class TestPySproto(unittest.TestCase):
                     {"b" : -100, "c" : False},
                     {"b" : 0, "e" : [b"test"]},
                 ],
+            "i" : 3.1415926,
             }
         msg = sproto_encode(st, source)
         dest, r = sproto_decode(st, msg)

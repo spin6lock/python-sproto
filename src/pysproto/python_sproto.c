@@ -159,6 +159,16 @@ encode(const struct sproto_arg *args) {
             }
             return r;
         }
+        case SPROTO_TDOUBLE: {
+            if (PyFloat_Check(data)) {
+                double d = PyFloat_AsDouble(data);
+                *(double *)args->value = d;
+                return 8;
+            } else {
+                mysetobject(SprotoError, PyUnicode_FromFormat("type mismatch, tag:%s, expected float, got:%s\n", tagname, GET_TYPE_NAME(data)));
+                return -1;
+            }
+        }
         default:
             return 0;
     }
@@ -288,6 +298,11 @@ decode(const struct sproto_arg *args) {
         }
         break;
 	}
+    case SPROTO_TDOUBLE: {
+        double d = *(double *)args->value;
+        data = Py_BuildValue("d", d);
+        break;
+    }
     default: {
             mysetobject(SprotoError, PyUnicode_FromFormat("unexpected type: %d", type));
             return SPROTO_CB_ERROR;
