@@ -276,13 +276,16 @@ decode(const struct sproto_arg *args) {
             r = sproto_decode(args->subtype, args->value, length, decode, &sub);
             if (r < 0) {
                 //printf("after decode:%d\n", r);
+                Py_DECREF(sub.table);
                 return SPROTO_CB_ERROR;
             }
             if (r != length) {
+                Py_DECREF(sub.table);
                 return r;
             }
             // printf("%s:%s\n", PyString_AsString(PyObject_Str(sub.map_key)), PyString_AsString(PyObject_Str(sub.table)));
             PyDict_SetItem(obj, sub.map_key, sub.table);
+            Py_DECREF(sub.table);
         } else {
             sub.mainindex = -1;
             data = sub.table;
@@ -290,9 +293,11 @@ decode(const struct sproto_arg *args) {
             //printf("int r:%d\n", r);
             if (r < 0) {
                 //printf("after decode:%d\n", r);
+                Py_DECREF(sub.table);
                 return SPROTO_CB_ERROR;
             }
             if (r != length) {
+                Py_DECREF(sub.table);
                 return r;
             }
         }
