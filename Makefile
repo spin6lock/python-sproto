@@ -6,7 +6,7 @@ pysproto: src/pysproto/python_sproto.c
 
 test: pysproto
 	cp build/*.so test/
-	cd test && python3 test.py && python3 test_wild_pointer.py && python3 test_mem.py
+	cd test && python3 test.py && python3 test_wild_pointer.py && python3 test_mem.py && python3 test_dict_nested_memleak.py
 
 clean:
 	rm -f *.so
