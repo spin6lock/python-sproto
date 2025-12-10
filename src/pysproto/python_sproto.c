@@ -398,6 +398,7 @@ py_sproto_decode(PyObject *pymodule, PyObject *args) {
         return NULL;
     }
     self.table = PyDict_New();
+    self.mainindex = 1;  // Initialize to prevent random value matching
     //printf("msg len:%d\n", sz);
     sprototype = PyCapsule_GetPointer(st_capsule, NULL);
     int r = sproto_decode(sprototype, buffer, sz, decode, &self);
