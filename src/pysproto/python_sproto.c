@@ -400,7 +400,7 @@ py_sproto_decode(PyObject *pymodule, PyObject *args) {
     }
     self.table = PyDict_New();
     self.map_key = NULL;
-    self.mainindex = 1;
+    self.mainindex = -1;
     //printf("msg len:%d\n", sz);
     sprototype = PyCapsule_GetPointer(st_capsule, NULL);
     int r = sproto_decode(sprototype, buffer, sz, decode, &self);
