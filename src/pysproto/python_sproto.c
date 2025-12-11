@@ -270,6 +270,7 @@ decode(const struct sproto_arg *args) {
 		struct decode_ud sub;
 		int r;
         sub.table = PyDict_New();
+        sub.map_key = NULL;
         if (args->mainindex >= 0) {
             //This struct will set into a map
             sub.mainindex = args->mainindex;
@@ -398,7 +399,8 @@ py_sproto_decode(PyObject *pymodule, PyObject *args) {
         return NULL;
     }
     self.table = PyDict_New();
-    self.mainindex = 1;  // Initialize to prevent random value matching
+    self.map_key = NULL;
+    self.mainindex = 1;
     //printf("msg len:%d\n", sz);
     sprototype = PyCapsule_GetPointer(st_capsule, NULL);
     int r = sproto_decode(sprototype, buffer, sz, decode, &self);
